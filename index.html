@@ -213,13 +213,31 @@ nav button .ic{font-size:19px; line-height:1;}
 nav button.active{color:var(--green);}
 .resetbar{text-align:center; margin-top:18px;}
 .resetbar button{background:none; border:1px solid var(--line); border-radius:9px; padding:8px 14px; color:var(--muted); font-size:11.5px; font-weight:700;}
+
+/* Admin */
+#lockbtn{float:left; margin:0 10px 0 0; background:rgba(255,255,255,.16); border:none; color:#fff; font-size:15px; width:34px; height:34px; border-radius:10px;}
+#adminbar{clear:both; margin-top:12px; background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.25); border-radius:12px; padding:9px 10px;}
+#adminbar .ab-btns{display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+#adminbar .ab-t{font-size:12px; font-weight:800; margin-right:2px;}
+#adminbar button{background:#fff; color:var(--green); border:none; border-radius:8px; padding:7px 9px; font-size:11.5px; font-weight:800;}
+#adminbar .ab-note{font-size:10.5px; opacity:.9; margin-top:6px;}
+.annc{background:#fff8e8; border-color:#ecdca6;}
+.annc .anncbody{font-size:13px; margin-top:6px; line-height:1.5; white-space:pre-line;}
+.miniedit{background:#eef4f1; color:var(--teal); border:none; border-radius:8px; padding:5px 9px; font-size:11.5px; font-weight:800;}
+.addbtn{display:block; width:100%; background:#eef4f1; color:var(--green); border:1px dashed var(--teal); border-radius:11px; padding:11px; font-weight:800; font-size:13px; margin-bottom:11px;}
+.adminrow{display:flex; gap:7px; margin-top:9px; padding-top:9px; border-top:1px dashed var(--line);}
+.adminrow button{flex:1; background:#eef4f1; color:var(--navy); border:none; border-radius:8px; padding:8px; font-size:11.5px; font-weight:800;}
+.adminrow button.del{background:#f7e4de; color:var(--danger); flex:0 0 auto; padding:8px 12px;}
+.bstat{margin-top:9px; padding-top:9px; border-top:1px dashed var(--line);}
 </style>
 </head>
 <body>
 <header>
+  <button id="lockbtn" onclick="adminTap()">🔒</button>
   <span class="hbadge" id="hbadge">D-11</span>
   <div class="htitle">🌴 발리 가족여행</div>
   <div class="hsub">2026.8.2(일)~8.9(일) · 6박8일 · 7인 · v5.7</div>
+  <div id="adminbar" class="hidden"></div>
 </header>
 
 <main id="app"></main>
@@ -514,16 +532,36 @@ const PREP = [
 ];
 
 /* ================= STATE ================= */
-const LS = {
-  budget: "bali_v57_budget",
-  resv:   "bali_v57_resv",
-  prep:   "bali_v57_prep"
+/* ===== 배포/관리자 설정 ===== */
+const GH = { owner:"sanghunkwak-pixel", repo:"bali-family-trip", branch:"master", path:"data.json" };
+const ADMIN_PW = "bali0802"; // 관리자 비밀번호 (원하면 이 값을 바꾸세요)
+
+/* ===== 편집 가능한 콘텐츠의 기본값(BASE) ===== */
+const BASE = {
+  announcement: "",
+  budget: BUDGET.map(b=>({cat:b[0],name:b[1],idr:b[2],krwU:b[3],qty:b[4],est:b[5],done:b[6],note:b[7],actual:null,cur:'KRW',raw:''})),
+  resv:   RESV.map(r=>({cat:r[0],title:r[1],where:r[2],deadline:r[3],owner:r[4],status:r[5],note:r[6]})),
+  cars:   CARS.map(c=>({seg:c[0],day:c[1],type:c[2],where:c[3],contact:c[4],price:c[5],status:c[6]}))
 };
-function load(k){ try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return {};} }
-function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
-let stBudget = load(LS.budget); // idx -> {done:bool, actual:number|null}
-let stResv   = load(LS.resv);   // idx -> bool (override)
-let stPrep   = load(LS.prep);   // idx -> bool
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+/* ===== 상태 ===== */
+const LS = { draft:"bali_v57_draft", prep:"bali_v57_prep", token:"bali_v57_ghtoken" };
+function lsGet(k){ try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;} }
+function lsSet(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+let stPrep = lsGet(LS.prep) || {};      // 준비물 체크 (기기별 개인)
+let PUB = null;                          // data.json 게시본
+let WORK = clone(BASE);                  // 화면에 반영되는 실효 상태
+let isAdmin = false;
+const EDKEYS = ['announcement','budget','resv','cars'];
+function applyLayers(){
+  WORK = clone(BASE);
+  if(PUB){ EDKEYS.forEach(k=>{ if(PUB[k]!==undefined) WORK[k]=clone(PUB[k]); }); }
+  const d = lsGet(LS.draft);
+  if(d){ EDKEYS.forEach(k=>{ if(d[k]!==undefined) WORK[k]=clone(d[k]); }); }
+}
+function saveDraft(){ lsSet(LS.draft, {announcement:WORK.announcement, budget:WORK.budget, resv:WORK.resv, cars:WORK.cars}); }
+applyLayers();
 
 /* ================= HELPERS ================= */
 const won = n => Math.round(n).toLocaleString("ko-KR");
@@ -553,7 +591,14 @@ function render(tab){
 }
 
 function renderHome(){
-  let h = `<h2 class="sec">👨‍👩‍👧‍👦 구성원 7인</h2>
+  let h = "";
+  if(WORK.announcement || isAdmin){
+    h += `<div class="card annc">
+      <div class="row between"><div class="b8">📢 공지</div>${isAdmin?`<button class="miniedit" onclick="editAnn()">✏️ 편집</button>`:''}</div>
+      <div class="anncbody">${WORK.announcement ? WORK.announcement.replace(/\n/g,'<br>') : '<span class="muted">등록된 공지가 없습니다.</span>'}</div>
+    </div>`;
+  }
+  h += `<h2 class="sec">👨‍👩‍👧‍👦 구성원 7인</h2>
    <div class="card"><div class="members">`;
   OVERVIEW.members.forEach(m=> h+=`<div class="mem">${m[0]} <span>${m[1]}</span></div>`);
   h += `</div></div><h2 class="sec">📋 여행 개요</h2><div class="card">`;
@@ -582,8 +627,8 @@ function renderHome(){
      <div class="bbar" style="background:#eee9dd;margin-top:9px"><i style="width:${Math.round(rc.done/rc.total*100)}%;background:var(--teal)"></i></div>
    </div>`;
 
-  h += `<div class="resetbar"><button onclick="resetAll()">저장한 결산·체크 초기화</button></div>
-   <div class="bhint" style="text-align:center">오프라인 파일 · 입력값은 이 기기 브라우저에만 저장됩니다.</div>`;
+  h += `<div class="resetbar"><button onclick="resetAll()">이 기기 체크·초안 초기화</button></div>
+   <div class="bhint" style="text-align:center">온라인일 때 관리자가 게시한 최신 내용을 불러옵니다. 준비물 체크는 이 기기에 저장됩니다.<br>관리자는 좌측 상단 자물쇠 🔒 로 로그인하세요.</div>`;
   app.innerHTML = h;
 }
 
@@ -656,15 +701,9 @@ function renderMap(){
 
 function calcBudget(){
   let done=0, todoEst=0;
-  BUDGET.forEach((b,i)=>{
-    const st = stBudget[i]||{};
-    const isDone = st.done!==undefined ? st.done : b[6];
-    if(isDone){
-      const actual = (st.actual!==undefined && st.actual!==null && st.actual!=="") ? Number(st.actual) : b[5];
-      done += actual;
-    } else {
-      todoEst += b[5];
-    }
+  WORK.budget.forEach(b=>{
+    if(b.done){ done += (b.actual!=null && b.actual!=="") ? Number(b.actual) : b.est; }
+    else { todoEst += b.est; }
   });
   const localTotal = done + todoEst;
   const grand = FLIGHT_KRW + LODGE_KRW + localTotal;
@@ -686,50 +725,57 @@ function renderBudget(){
      <div class="bbar"><i style="width:${Math.min(100,s.usedPct)}%"></i></div>
      <div class="brow" style="font-size:11px;opacity:.85"><span>총 지출 ${won(s.grand)}원</span><span>목표의 ${s.usedPct}%</span></div>
    </div>`;
-  h += `<div class="bhint">미완료 항목에 쓴 금액을 IDR/KRW로 입력 → <b>[이 금액으로 완료 처리]</b>를 누르면 KRW로 환산·확정됩니다. 완료 항목은 금액이 잠기며, 다시 누르면 미완료로 돌아가 수정할 수 있어요.</div>`;
+  if(isAdmin){
+    h += `<div class="bhint">관리자 모드 · 미완료 항목에 금액을 IDR/KRW로 입력 후 <b>[완료 처리]</b> → 상단 <b>📤 게시하기</b>로 전원 반영. 완료 항목은 금액이 잠기며 다시 누르면 미완료로.</div>`;
+    h += `<button class="addbtn" onclick="addBudget()">＋ 예산 항목 추가</button>`;
+  } else {
+    h += `<div class="bhint">관리자가 게시한 결산 내역입니다.</div>`;
+  }
   h += `<div class="bfilter">
      <button class="${bFilter==='todo'?'active':''}" onclick="setBF('todo')">미완료</button>
      <button class="${bFilter==='done'?'active':''}" onclick="setBF('done')">완료</button>
      <button class="${bFilter==='all'?'active':''}" onclick="setBF('all')">전체</button>
    </div>`;
 
-  BUDGET.forEach((b,i)=>{
-    const st = stBudget[i]||{};
-    const isDone = st.done!==undefined ? st.done : b[6];
-    if(bFilter==='todo' && isDone) return;
-    if(bFilter==='done' && !isDone) return;
-    const raw = (st.raw!==undefined && st.raw!==null) ? st.raw : "";
-    const cur = st.cur || 'KRW';
-    const actual = (st.actual!==undefined && st.actual!==null) ? Number(st.actual) : null;
-    const shown = isDone ? (actual!==null?actual:b[5]) : b[5];
-    const unit = b[2]!==null ? `IDR ${b[2].toLocaleString()}${b[4]>1?' ×'+b[4]:''}` : (b[4]>1?`${won(b[3])}원 ×${b[4]}`:'');
-    h += `<div class="bitem ${isDone?'done':''}">
+  WORK.budget.forEach((b,i)=>{
+    if(bFilter==='todo' && b.done) return;
+    if(bFilter==='done' && !b.done) return;
+    const raw = (b.raw!==undefined && b.raw!==null) ? b.raw : "";
+    const cur = b.cur || 'KRW';
+    const shown = b.done ? ((b.actual!=null && b.actual!=="")?Number(b.actual):b.est) : b.est;
+    const unit = (b.idr!=null) ? `IDR ${Number(b.idr).toLocaleString()}${b.qty>1?' ×'+b.qty:''}` : (b.qty>1?`${won(b.krwU)}원 ×${b.qty}`:'');
+    h += `<div class="bitem ${b.done?'done':''}">
       <div class="bhead">
         <div style="min-width:0">
-          <div class="bcat">${b[0]}${unit?' · '+unit:''}</div>
-          <div class="bname">${b[1]}</div>
+          <div class="bcat">${b.cat}${unit?' · '+unit:''}</div>
+          <div class="bname">${b.name}</div>
         </div>
         <div class="bfig">
-          <div class="best">견적 ${won(b[5])}</div>
+          <div class="best">견적 ${won(b.est)}</div>
           <div class="bact">${won(shown)}원</div>
         </div>
       </div>
-      ${b[7]?`<div class="bnote">${b[7]}</div>`:''}`;
-    if(isDone){
-      h += `<div class="bdone">
-        <div class="bdonefig">확정 금액 <b>${won(shown)}원</b>${(raw!==""&&cur==='IDR')?` <span class="xsmall muted">(입력 IDR ${Number(raw).toLocaleString()})</span>`:''}</div>
-        <button class="toggle on" onclick="toggleDone(${i})">완료 ✓ · 탭하여 미완료로</button>
-      </div>`;
-    } else {
-      h += `<div class="bctl">
-        <div class="curtog">
-          <button class="${cur==='KRW'?'on':''}" onclick="setCur(${i},'KRW')">KRW</button>
-          <button class="${cur==='IDR'?'on':''}" onclick="setCur(${i},'IDR')">IDR</button>
+      ${b.note?`<div class="bnote">${b.note}</div>`:''}`;
+    if(isAdmin){
+      if(b.done){
+        h += `<div class="bdone">
+          <div class="bdonefig">확정 금액 <b>${won(shown)}원</b>${(raw!==""&&cur==='IDR')?` <span class="xsmall muted">(입력 IDR ${Number(raw).toLocaleString()})</span>`:''}</div>
+          <button class="toggle on" onclick="toggleDone(${i})">완료 ✓ · 탭하여 미완료로</button>
+        </div>`;
+      } else {
+        h += `<div class="bctl">
+          <div class="curtog">
+            <button class="${cur==='KRW'?'on':''}" onclick="setCur(${i},'KRW')">KRW</button>
+            <button class="${cur==='IDR'?'on':''}" onclick="setCur(${i},'IDR')">IDR</button>
+          </div>
+          <input type="number" inputmode="numeric" placeholder="쓴 금액 (${cur})" value="${raw}" oninput="setRaw(${i}, this.value)">
         </div>
-        <input type="number" inputmode="numeric" placeholder="쓴 금액 (${cur})" value="${raw}" oninput="setRaw(${i}, this.value)">
-      </div>
-      <div class="convhint" id="conv-${i}">${convText(raw,cur)}</div>
-      <button class="toggle" onclick="toggleDone(${i})">이 금액으로 완료 처리</button>`;
+        <div class="convhint" id="conv-${i}">${convText(raw,cur)}</div>
+        <button class="toggle" onclick="toggleDone(${i})">이 금액으로 완료 처리</button>`;
+      }
+      h += `<div class="adminrow"><button onclick="editBudget(${i})">✏️ 편집</button><button class="del" onclick="delBudget(${i})">🗑 삭제</button></div>`;
+    } else {
+      h += `<div class="bstat">${b.done?'<span class="tag t-ok">완료</span>':'<span class="tag t-wait">미완료</span>'}</div>`;
     }
     h += `</div>`;
   });
@@ -748,48 +794,49 @@ function renderResv(){
     <div class="card tight"><div class="row between small">
       <span><span class="tag t-ok">완료 ${rc.done}</span> <span class="tag t-wait">대기 ${rc.wait}</span> <span class="tag t-prog">진행중 ${rc.prog}</span></span>
     </div></div>`;
-  // group by category order of appearance
-  const cats = [...new Set(RESV.map(r=>r[0]))];
+  if(isAdmin) h += `<button class="addbtn" onclick="addResv()">＋ 예약 항목 추가</button>`;
+  const cats = [...new Set(WORK.resv.map(r=>r.cat))];
   cats.forEach(cat=>{
     h += `<h2 class="sec" style="font-size:14px;color:var(--navy)">${cat}</h2><div class="card">`;
-    RESV.forEach((r,i)=>{
-      if(r[0]!==cat) return;
-      const base = r[5]==='done';
-      const on = stResv[i]!==undefined ? stResv[i] : base;
-      const stTag = on ? '<span class="tag t-ok">완료</span>' : (r[5]==='prog'?'<span class="tag t-prog">진행중</span>':'<span class="tag t-wait">대기</span>');
+    WORK.resv.forEach((r,i)=>{
+      if(r.cat!==cat) return;
+      const on = r.status==='done';
+      const stTag = on ? '<span class="tag t-ok">완료</span>' : (r.status==='prog'?'<span class="tag t-prog">진행중</span>':'<span class="tag t-wait">대기</span>');
       h += `<div class="ritem">
-        <div class="rchk ${on?'on':''}" onclick="toggleResv(${i})">${on?'✓':''}</div>
+        <div class="rchk ${on?'on':''}" ${isAdmin?`onclick="cycleResv(${i})"`:'style="cursor:default"'}>${on?'✓':''}</div>
         <div class="rbody">
-          <div class="row between"><div class="rtitle">${r[1]}</div>${stTag}</div>
-          <div class="rmeta">🏢 ${r[2]} · 👤 ${r[4]} · <span class="rdead">⏰ ${r[3]}</span></div>
-          ${r[6]?`<div class="rnote">${r[6]}</div>`:''}
+          <div class="row between"><div class="rtitle">${r.title}</div>${stTag}</div>
+          <div class="rmeta">🏢 ${r.where} · 👤 ${r.owner} · <span class="rdead">⏰ ${r.deadline}</span></div>
+          ${r.note?`<div class="rnote">${r.note}</div>`:''}
+          ${isAdmin?`<div class="adminrow"><button onclick="cycleResv(${i})">🔁 상태</button><button onclick="editResv(${i})">✏️ 편집</button><button class="del" onclick="delResv(${i})">🗑 삭제</button></div>`:''}
         </div>
       </div>`;
     });
     h += `</div>`;
   });
-  h += `<div class="bhint">체크박스를 누르면 완료 상태를 이 기기에 저장합니다. ⭐출력 = 출력물 지참 권장 항목.</div>`;
+  h += `<div class="bhint">${isAdmin?'관리자 모드 · 상태·메모를 편집하고 상단 📤 게시하기로 전원 반영하세요.':'관리자가 관리하는 예약 현황입니다.'} ⭐출력 = 출력물 지참 권장 항목.</div>`;
   app.innerHTML = h;
 }
 
 function renderCar(){
   let h = `<h2 class="sec">🚐 차량·이동 예약 현황</h2>`;
-  CARS.forEach(c=>{
-    const [seg,day,type,where,contact,price,status]=c;
+  if(isAdmin) h += `<button class="addbtn" onclick="addCar()">＋ 차량 추가</button>`;
+  WORK.cars.forEach((c,i)=>{
     h += `<div class="vcard">
       <div class="vhead">
-        <div><div class="vseg">${seg}</div><div class="vday">${day}</div></div>
-        <span class="tag ${status==='done'?'t-ok':'t-wait'}">${status==='done'?'예약완료':'예약대기'}</span>
+        <div><div class="vseg">${c.seg}</div><div class="vday">${c.day}</div></div>
+        <span class="tag ${c.status==='done'?'t-ok':'t-wait'}">${c.status==='done'?'예약완료':'예약대기'}</span>
       </div>
       <div class="vbody">
-        <div class="vline"><div class="vk">차량</div><div class="vv">${type}</div></div>
-        <div class="vline"><div class="vk">예약처</div><div class="vv b">${where}</div></div>
-        <div class="vline"><div class="vk">요금</div><div class="vv">${price}</div></div>
-        ${contact?`<div class="vline"><div class="vk">연락처</div><div class="vv"><a class="callbtn" href="tel:${contact.replace(/[^+0-9]/g,'')}">📞 ${contact}</a></div></div>`:''}
+        <div class="vline"><div class="vk">차량</div><div class="vv">${c.type}</div></div>
+        <div class="vline"><div class="vk">예약처</div><div class="vv b">${c.where}</div></div>
+        <div class="vline"><div class="vk">요금</div><div class="vv">${c.price}</div></div>
+        ${c.contact?`<div class="vline"><div class="vk">연락처</div><div class="vv"><a class="callbtn" href="tel:${c.contact.replace(/[^+0-9]/g,'')}">📞 ${c.contact}</a></div></div>`:''}
+        ${isAdmin?`<div class="adminrow"><button onclick="cycleCar(${i})">🔁 상태</button><button onclick="editCar(${i})">✏️ 편집</button><button class="del" onclick="delCar(${i})">🗑 삭제</button></div>`:''}
       </div>
     </div>`;
   });
-  h += `<div class="bhint">숙소(Nyuh)·마이리얼트립·Grab 앱 등 예약처별로 정리되어 있습니다. 연락처를 누르면 전화가 연결됩니다.</div>`;
+  h += `<div class="bhint">${isAdmin?'관리자 모드 · 예약처·연락처·요금·상태를 편집하고 상단 📤 게시하기로 전원 반영하세요.':'예약처별로 정리되어 있습니다. 연락처를 누르면 전화가 연결됩니다.'}</div>`;
   app.innerHTML = h;
 }
 
@@ -841,13 +888,12 @@ function renderInfo(){
 /* counts */
 function resvCounts(){
   let done=0,wait=0,prog=0;
-  RESV.forEach((r,i)=>{
-    const on = stResv[i]!==undefined ? stResv[i] : (r[5]==='done');
-    if(on) done++;
-    else if(r[5]==='prog') prog++;
+  WORK.resv.forEach(r=>{
+    if(r.status==='done') done++;
+    else if(r.status==='prog') prog++;
     else wait++;
   });
-  return {done,wait,prog,total:RESV.length};
+  return {done,wait,prog,total:WORK.resv.length};
 }
 
 /* ================= ACTIONS ================= */
@@ -861,64 +907,178 @@ function go(t){
 function setDay(d){ curDay=d; mapLeg=0; render(curTab); window.scrollTo(0,0); }
 function setLeg(i){ mapLeg=i; renderMap(); }
 function setBF(f){ bFilter=f; renderBudget(); }
+
+/* ---- 예산 편집 ---- */
 function toggleDone(i){
-  const st = stBudget[i]||{};
-  const isDone = st.done!==undefined ? st.done : BUDGET[i][6];
-  if(!isDone){
-    // 완료 처리: 입력 금액을 KRW로 환산해 확정
-    const n = Number(st.raw);
-    if(st.raw!==undefined && st.raw!=="" && !isNaN(n) && n>0){
-      st.actual = (st.cur==='IDR') ? Math.round(n*RATE) : Math.round(n);
-    } else {
-      st.actual = BUDGET[i][5]; // 미입력 시 견적으로 확정
-    }
-    st.done = true;
-  } else {
-    // 미완료로 되돌리기 (입력값·통화는 유지해 수정 가능)
-    st.done = false;
-  }
-  stBudget[i]=st; save(LS.budget,stBudget);
-  renderBudget();
+  const b = WORK.budget[i];
+  if(!b.done){
+    const n = Number(b.raw);
+    if(b.raw!==undefined && b.raw!=="" && !isNaN(n) && n>0){
+      b.actual = (b.cur==='IDR') ? Math.round(n*RATE) : Math.round(n);
+    } else { b.actual = b.est; }
+    b.done = true;
+  } else { b.done = false; }
+  saveDraft(); renderBudget(); updateAdminBar();
 }
 function setRaw(i,v){
-  const st = stBudget[i]||{};
-  st.raw = v; if(!st.cur) st.cur='KRW';
-  stBudget[i]=st; save(LS.budget,stBudget);
+  const b = WORK.budget[i]; b.raw=v; if(!b.cur) b.cur='KRW';
+  saveDraft();
   const el = document.getElementById('conv-'+i);
-  if(el) el.textContent = convText(v, st.cur); // 요약·포커스 유지
+  if(el) el.textContent = convText(v, b.cur);
 }
-function setCur(i,c){
-  const st = stBudget[i]||{};
-  st.cur = c;
-  stBudget[i]=st; save(LS.budget,stBudget);
-  renderBudget();
+function setCur(i,c){ WORK.budget[i].cur=c; saveDraft(); renderBudget(); }
+function editBudget(i){
+  const b=WORK.budget[i];
+  const name=prompt('항목 이름', b.name); if(name===null) return; if(name!=='') b.name=name;
+  const cat=prompt('분류 (비자·행정/교통/식비/액티비티/스파/통신/보험 등)', b.cat); if(cat!==null&&cat!=='') b.cat=cat;
+  const est=prompt('견적 금액(원)', b.est); if(est!==null&&!isNaN(Number(est))) b.est=Math.round(Number(est));
+  const note=prompt('메모', b.note||''); if(note!==null) b.note=note;
+  saveDraft(); renderBudget(); updateAdminBar();
 }
-function toggleResv(i){
-  const base = RESV[i][5]==='done';
-  const cur = stResv[i]!==undefined ? stResv[i] : base;
-  stResv[i]=!cur; save(LS.resv,stResv);
-  render(curTab);
+function addBudget(){
+  const name=prompt('새 예산 항목 이름'); if(!name) return;
+  const cat=prompt('분류','기타')||'기타';
+  const est=Math.round(Number(prompt('견적 금액(원)','0'))||0);
+  WORK.budget.push({cat,name,idr:null,krwU:est,qty:1,est,done:false,note:'',actual:null,cur:'KRW',raw:''});
+  saveDraft(); renderBudget(); updateAdminBar();
 }
-function togglePrep(i){ stPrep[i]=!stPrep[i]; save(LS.prep,stPrep); renderInfo(); }
+function delBudget(i){ if(confirm('이 예산 항목을 삭제할까요?')){ WORK.budget.splice(i,1); saveDraft(); renderBudget(); updateAdminBar(); } }
+
+/* ---- 예약 편집 ---- */
+function cycleResv(i){ const o=['wait','prog','done']; const r=WORK.resv[i]; r.status=o[(o.indexOf(r.status)+1)%3]; saveDraft(); renderResv(); updateAdminBar(); }
+function editResv(i){
+  const r=WORK.resv[i];
+  const t=prompt('예약 항목명', r.title); if(t===null) return; if(t!=='') r.title=t;
+  const cat=prompt('분류 (액티비티/숙소/행정/서류/식당/교통/스파/보험/통신/앱 등)', r.cat); if(cat!==null&&cat!=='') r.cat=cat;
+  const w=prompt('예약처/방법', r.where); if(w!==null) r.where=w;
+  const o=prompt('담당', r.owner); if(o!==null) r.owner=o;
+  const d=prompt('데드라인', r.deadline); if(d!==null) r.deadline=d;
+  const n=prompt('메모', r.note||''); if(n!==null) r.note=n;
+  saveDraft(); renderResv(); updateAdminBar();
+}
+function addResv(){
+  const t=prompt('새 예약 항목명'); if(!t) return;
+  const cat=prompt('분류','기타')||'기타';
+  const w=prompt('예약처/방법','')||'';
+  const o=prompt('담당','상헌')||'';
+  const d=prompt('데드라인','')||'';
+  WORK.resv.push({cat,title:t,where:w,deadline:d,owner:o,status:'wait',note:''});
+  saveDraft(); renderResv(); updateAdminBar();
+}
+function delResv(i){ if(confirm('이 예약 항목을 삭제할까요?')){ WORK.resv.splice(i,1); saveDraft(); renderResv(); updateAdminBar(); } }
+
+/* ---- 차량 편집 ---- */
+function cycleCar(i){ const c=WORK.cars[i]; c.status = c.status==='done'?'wait':'done'; saveDraft(); renderCar(); updateAdminBar(); }
+function editCar(i){
+  const c=WORK.cars[i];
+  const s=prompt('구간명', c.seg); if(s===null) return; if(s!=='') c.seg=s;
+  const day=prompt('일시', c.day); if(day!==null) c.day=day;
+  const t=prompt('차량 종류', c.type); if(t!==null) c.type=t;
+  const w=prompt('예약처', c.where); if(w!==null) c.where=w;
+  const ct=prompt('연락처(전화)', c.contact||''); if(ct!==null) c.contact=ct;
+  const p=prompt('요금', c.price); if(p!==null) c.price=p;
+  saveDraft(); renderCar(); updateAdminBar();
+}
+function addCar(){
+  const s=prompt('새 구간명'); if(!s) return;
+  const day=prompt('일시','')||'';
+  const t=prompt('차량 종류','')||'';
+  const w=prompt('예약처','')||'';
+  WORK.cars.push({seg:s,day,type:t,where:w,contact:'',price:'미정',status:'wait'});
+  saveDraft(); renderCar(); updateAdminBar();
+}
+function delCar(i){ if(confirm('이 차량 항목을 삭제할까요?')){ WORK.cars.splice(i,1); saveDraft(); renderCar(); updateAdminBar(); } }
+
+/* ---- 공지 ---- */
+function editAnn(){ const v=prompt('공지 내용 (모두에게 표시, 줄바꿈 가능)', WORK.announcement||''); if(v===null) return; WORK.announcement=v; saveDraft(); renderHome(); updateAdminBar(); }
+
+/* ---- 준비물(기기별) ---- */
+function togglePrep(i){ stPrep[i]=!stPrep[i]; lsSet(LS.prep,stPrep); renderInfo(); }
 function resetAll(){
-  if(confirm("입력한 결산 금액·예약체크·준비물 체크를 모두 지울까요?")){
-    localStorage.removeItem(LS.budget); localStorage.removeItem(LS.resv); localStorage.removeItem(LS.prep);
-    stBudget={}; stResv={}; stPrep={};
-    render(curTab);
+  if(confirm("이 기기의 준비물 체크와 '미게시 편집 초안'을 지울까요? (게시된 내용은 그대로 유지)")){
+    localStorage.removeItem(LS.prep); localStorage.removeItem(LS.draft);
+    stPrep={}; applyLayers(); render(curTab); updateAdminBar();
   }
 }
 
-/* D-day badge */
-(function(){
+/* ================= 관리자 & 게시 ================= */
+function adminTap(){
+  if(isAdmin){ updateAdminBar(); return; }
+  const pw=prompt('관리자 비밀번호'); if(pw===null) return;
+  if(pw===ADMIN_PW){ isAdmin=true; sessionStorage.setItem('bali_admin','1'); updateAdminBar(); render(curTab); }
+  else alert('비밀번호가 올바르지 않습니다.');
+}
+function adminExit(){ isAdmin=false; sessionStorage.removeItem('bali_admin'); updateAdminBar(); render(curTab); }
+function updateAdminBar(){
+  const el=document.getElementById('adminbar'); const lb=document.getElementById('lockbtn');
+  if(!el) return;
+  if(isAdmin){
+    el.classList.remove('hidden'); if(lb) lb.textContent='🔓';
+    let t='없음';
+    try{ if(PUB&&PUB.publishedAt) t=new Date(PUB.publishedAt).toLocaleString('ko-KR'); }catch(e){}
+    const dirty = lsGet(LS.draft) ? ' · <b>미게시 변경 있음</b>' : '';
+    el.innerHTML = `<div class="ab-btns">
+        <span class="ab-t">🔓 관리자</span>
+        <button onclick="publish()">📤 게시하기</button>
+        <button onclick="setToken()">🔑 토큰</button>
+        <button onclick="revertDraft()">↩ 초안취소</button>
+        <button onclick="adminExit()">나가기</button>
+      </div>
+      <div class="ab-note">마지막 게시: ${t}${dirty}</div>`;
+  } else { el.classList.add('hidden'); if(lb) lb.textContent='🔒'; }
+}
+function setToken(){
+  const cur=lsGet(LS.token)||'';
+  const t=prompt('GitHub 개인 액세스 토큰 (이 기기에만 저장됩니다)\n※ '+GH.owner+'/'+GH.repo+' 저장소의 Contents 읽기·쓰기 권한 필요\n(비우고 확인하면 삭제)', cur);
+  if(t===null) return null;
+  if(t.trim()===''){ localStorage.removeItem(LS.token); alert('토큰을 삭제했습니다.'); return null; }
+  lsSet(LS.token, t.trim()); return t.trim();
+}
+function revertDraft(){
+  if(confirm('게시하지 않은 편집 내용을 버리고 마지막 게시본으로 되돌릴까요?')){
+    localStorage.removeItem(LS.draft); applyLayers(); render(curTab); updateAdminBar();
+  }
+}
+async function publish(){
+  let token=lsGet(LS.token);
+  if(!token){ token=setToken(); if(!token) return; }
+  const api=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${encodeURIComponent(GH.path)}`;
+  const payload={ dataVersion:57, announcement:WORK.announcement, budget:WORK.budget, resv:WORK.resv, cars:WORK.cars, publishedAt:new Date().toISOString() };
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,1))));
+  try{
+    let sha;
+    const g=await fetch(api+`?ref=${GH.branch}`,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'}});
+    if(g.status===200){ sha=(await g.json()).sha; }
+    else if(g.status===401){ alert('토큰이 유효하지 않습니다. 🔑 토큰을 다시 설정하세요.'); return; }
+    const p=await fetch(api,{method:'PUT',headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({message:'Update trip data via admin',content,sha,branch:GH.branch})});
+    if(p.ok){ PUB=payload; localStorage.removeItem(LS.draft); alert('게시 완료! 1~2분 뒤 모든 기기에 반영됩니다.'); updateAdminBar(); }
+    else { let m=p.status; try{ m=(await p.json()).message; }catch(e){} alert('게시 실패: '+m); }
+  }catch(err){ alert('게시 오류: '+err.message+'\n(온라인 상태·토큰 권한을 확인하세요)'); }
+}
+
+/* ================= BOOT ================= */
+function ddayBadge(){
   try{
     const dep=new Date(2026,7,2), now=new Date();
     const d=Math.ceil((dep-now)/86400000);
-    document.getElementById("hbadge").textContent = d>0?("D-"+d):(d===0?"D-DAY":"여행중");
+    const el=document.getElementById("hbadge");
+    if(el) el.textContent = d>0?("D-"+d):(d===0?"D-DAY":"여행중");
   }catch(e){}
-})();
-
-document.querySelectorAll("#nav button").forEach(b=> b.addEventListener("click",()=>go(b.dataset.t)));
-render("home");
+}
+async function boot(){
+  try{
+    const r=await fetch(GH.path+'?t='+Date.now(),{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); if(j&&typeof j==='object') PUB=j; }
+  }catch(e){ /* 오프라인/파일 열람 시 내장 데이터 사용 */ }
+  applyLayers();
+  if(sessionStorage.getItem('bali_admin')==='1') isAdmin=true;
+  document.querySelectorAll("#nav button").forEach(b=> b.addEventListener("click",()=>go(b.dataset.t)));
+  updateAdminBar();
+  ddayBadge();
+  go('home');
+}
+boot();
 </script>
 </body>
 </html>
