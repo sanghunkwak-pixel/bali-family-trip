@@ -665,6 +665,15 @@ function renderHome(){
   app.innerHTML = h;
 }
 
+function scrollActiveDay(){
+  // 선택된 날짜 탭이 가로 스크롤 영역 밖으로 숨지 않도록 왼쪽으로 끌어와 보이게 함
+  const c=document.querySelector('.daytabs'); if(!c) return;
+  const a=c.querySelector('.daytab.active'); if(!a) return;
+  requestAnimationFrame(()=>{
+    const d = a.getBoundingClientRect().left - c.getBoundingClientRect().left;
+    c.scrollLeft += d - 14; // 왼쪽에서 14px 여백을 두고 정렬
+  });
+}
 function trackInfo(grp){
   if(/부모님/.test(grp)) return {key:'parent', order:9, label:'✈️ 부모님 (이동·합류)'};
   if(/다이빙/.test(grp)) return {key:'dive',   order:3, label:'🤿 다이빙팀'};
@@ -709,6 +718,7 @@ function renderPlan(){
     h += `</div></div>`;
   });
   app.innerHTML = h;
+  scrollActiveDay();
 }
 
 const enc = encodeURIComponent;
@@ -756,6 +766,7 @@ function renderMap(){
     <div class="maphint">지도는 온라인일 때 구글맵을 그대로 불러옵니다(휴대폰 데이터·GPS 사용). 현지 교통상황에 따라 이동시간이 달라질 수 있으니 출발 직전 한 번 더 확인하세요.</div>
   </div>`;
   app.innerHTML = h;
+  scrollActiveDay();
 }
 
 function calcBudget(){
