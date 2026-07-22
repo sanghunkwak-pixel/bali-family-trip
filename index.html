@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="theme-color" content="#174b3e" />
+<title>발리 가족여행 v5.7</title>
+<style>
+:root{
+  --navy:#17345b; --green:#174b3e; --teal:#2d8a78; --orange:#d86d3d;
+  --gold:#dfad37; --paper:#f6f1e7; --card:#ffffff; --line:#e3dccc;
+  --ink:#22302c; --muted:#6d7772; --white:#fff;
+  --ok:#2d8a78; --wait:#d89a3d; --prog:#4a7bb0; --danger:#c0553a;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:"Apple SD Gothic Neo","Malgun Gothic",system-ui,-apple-system,sans-serif;
+  background:var(--paper); color:var(--ink);
+  font-size:15px; line-height:1.5;
+  padding-bottom:calc(66px + var(--safe-b));
+}
+a{color:var(--teal); text-decoration:none;}
+.hidden{display:none !important;}
+
+/* Header */
+header{
+  position:sticky; top:0; z-index:40;
+  background:linear-gradient(135deg,var(--green),var(--teal));
+  color:#fff; padding:14px 16px 12px;
+  box-shadow:0 2px 10px rgba(0,0,0,.12);
+}
+header .htitle{font-size:18px; font-weight:800; letter-spacing:-.02em;}
+header .hsub{font-size:12px; opacity:.85; margin-top:2px;}
+header .hbadge{
+  float:right; background:rgba(255,255,255,.18); border-radius:20px;
+  font-size:11px; padding:4px 10px; font-weight:700; margin-top:2px;
+}
+
+/* Content */
+main{padding:14px 14px 22px; max-width:640px; margin:0 auto;}
+h2.sec{font-size:16px; font-weight:800; margin:20px 0 10px; color:var(--green); display:flex; align-items:center; gap:7px;}
+h2.sec:first-child{margin-top:4px;}
+.card{
+  background:var(--card); border:1px solid var(--line);
+  border-radius:14px; padding:13px 14px; margin-bottom:11px;
+  box-shadow:0 1px 3px rgba(30,40,35,.05);
+}
+.card.tight{padding:11px 13px;}
+.muted{color:var(--muted);}
+.small{font-size:12.5px;}
+.xsmall{font-size:11.5px;}
+.b{font-weight:700;} .b8{font-weight:800;}
+.row{display:flex; gap:10px;}
+.row.between{justify-content:space-between; align-items:center;}
+.wrapline{white-space:pre-line;}
+
+/* chips / tags */
+.tag{display:inline-block; font-size:11px; font-weight:800; padding:3px 8px; border-radius:20px; white-space:nowrap;}
+.t-ok{background:#e2f1ec; color:var(--ok);}
+.t-wait{background:#fbf0da; color:#b57d1e;}
+.t-prog{background:#e6eef7; color:var(--prog);}
+.t-danger{background:#f7e4de; color:var(--danger);}
+.t-grey{background:#eee9dd; color:#8a8474;}
+.grp{display:inline-block; font-size:10.5px; font-weight:800; padding:2px 7px; border-radius:6px; background:#eef4f1; color:var(--teal);}
+.grp.p{background:#f3ecf7; color:#8256a8;}
+.grp.s{background:#fbeee6; color:var(--orange);}
+.grp.d{background:#e6eef7; color:var(--prog);}
+
+/* Overview grid */
+.kv{display:flex; gap:9px; padding:9px 0; border-bottom:1px dashed var(--line);}
+.kv:last-child{border-bottom:none;}
+.kv .k{flex:0 0 78px; color:var(--muted); font-size:12.5px; font-weight:700;}
+.kv .v{flex:1; font-size:13.5px;}
+.members{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;}
+.mem{background:#eef4f1; border-radius:10px; padding:6px 9px; font-size:12px; font-weight:700;}
+.mem span{font-weight:400; color:var(--muted); font-size:11px;}
+
+/* Timeline */
+.daytabs{display:flex; gap:7px; overflow-x:auto; padding:4px 0 10px; margin:0 -14px; padding-left:14px; padding-right:14px; -webkit-overflow-scrolling:touch;}
+.daytab{flex:0 0 auto; border:1px solid var(--line); background:#fff; border-radius:11px; padding:7px 11px; font-weight:800; font-size:13px; color:var(--navy); text-align:center; min-width:56px; cursor:pointer;}
+.daytab .d2{display:block; font-size:10.5px; color:var(--muted); font-weight:600;}
+.daytab.active{background:var(--green); color:#fff; border-color:var(--green);}
+.daytab.active .d2{color:#cfe6dd;}
+
+.tl{position:relative; padding-left:16px;}
+.tl::before{content:""; position:absolute; left:4px; top:6px; bottom:6px; width:2px; background:var(--line);}
+.ti{position:relative; margin-bottom:11px;}
+.ti::before{content:""; position:absolute; left:-15px; top:15px; width:9px; height:9px; border-radius:50%; background:var(--teal); border:2px solid #fff; box-shadow:0 0 0 1px var(--line);}
+.ti .time{font-size:11.5px; font-weight:800; color:var(--teal); letter-spacing:-.01em;}
+.ti .ttl{font-weight:800; font-size:14px; margin:2px 0 3px;}
+.ti .det{font-size:12.5px; color:#4a544f;}
+.ti .meta{margin-top:6px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+.pin{font-size:11.5px; color:var(--orange); font-weight:700;}
+
+/* Map */
+.daynote{font-size:12.5px; color:var(--muted); margin:-4px 2px 12px; line-height:1.45;}
+.leg{display:grid; grid-template-columns:52px 1fr; gap:10px; padding:13px; border-bottom:1px solid var(--line); cursor:pointer;}
+.leg:last-child{border-bottom:none;}
+.leg.active{background:#eef7f3; box-shadow:inset 4px 0 0 var(--teal);}
+.legtime{color:var(--navy); font-size:14px; font-weight:900;}
+.legttl{font-size:13.5px; font-weight:800; line-height:1.3;}
+.legmeta{margin-top:3px; color:var(--muted); font-size:11.5px; line-height:1.4;}
+.legtag{display:inline-block; margin-top:6px; padding:3px 8px; border-radius:6px; background:#fff3d6; color:#815710; font-size:10.5px; font-weight:800;}
+.mapbox{background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; margin-top:12px;}
+.mapcur{padding:12px 14px 4px;}
+.mapcurttl{font-size:14px; font-weight:800; color:var(--green); line-height:1.3;}
+.mapcurdet{font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.4;}
+.mapacts{display:flex; gap:8px; padding:11px 14px 12px;}
+.mapacts .action{flex:1; text-align:center; border:1px solid var(--navy); border-radius:10px; padding:11px; background:var(--navy); color:#fff; font-size:13px; font-weight:800;}
+.mapacts .action.sec{background:#fff; color:var(--navy);}
+.mapframe{display:block; width:100%; height:52vh; min-height:300px; border:0; background:#e8ecea;}
+.maphint{padding:11px 14px; background:#fff8e8; border-top:1px solid var(--line); color:#745018; font-size:11.5px; line-height:1.5; font-weight:600;}
+
+/* Budget */
+.bsummary{background:linear-gradient(135deg,#1d4a3c,#2d8a78); color:#fff; border-radius:16px; padding:15px; margin-bottom:14px;}
+.bsummary .brow{display:flex; justify-content:space-between; padding:5px 0; font-size:13px;}
+.bsummary .brow.big{font-size:15px; font-weight:800; border-top:1px solid rgba(255,255,255,.25); margin-top:6px; padding-top:9px;}
+.bsummary .amt{font-variant-numeric:tabular-nums; font-weight:800;}
+.bsummary .pos{color:#bfe9c5;} .bsummary .neg{color:#ffcdb8;}
+.bbar{height:8px; border-radius:6px; background:rgba(255,255,255,.2); overflow:hidden; margin-top:9px;}
+.bbar > i{display:block; height:100%; background:var(--gold);}
+
+.bfilter{display:flex; gap:6px; margin-bottom:12px;}
+.bfilter button{flex:1; border:1px solid var(--line); background:#fff; border-radius:9px; padding:8px; font-weight:800; font-size:12.5px; color:var(--muted);}
+.bfilter button.active{background:var(--green); color:#fff; border-color:var(--green);}
+
+.bitem{border:1px solid var(--line); border-radius:12px; padding:11px 12px; margin-bottom:9px; background:#fff;}
+.bitem.done{background:#f4faf7; border-color:#cfe7dd;}
+.bitem .bhead{display:flex; justify-content:space-between; gap:8px; align-items:flex-start;}
+.bitem .bname{font-weight:800; font-size:13.5px;}
+.bitem .bcat{font-size:10.5px; color:var(--muted); font-weight:700;}
+.bitem .bnote{font-size:11.5px; color:var(--muted); margin-top:5px; white-space:pre-line;}
+.bitem .bfig{text-align:right; white-space:nowrap;}
+.bitem .best{font-size:11px; color:var(--muted); text-decoration:none;}
+.bitem .bact{font-size:15px; font-weight:800; font-variant-numeric:tabular-nums;}
+.bctl{display:flex; gap:8px; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);}
+.bctl input{flex:1; min-width:0; border:1px solid var(--line); border-radius:9px; padding:10px 11px; font-size:15px; font-variant-numeric:tabular-nums; -webkit-appearance:none;}
+.curtog{flex:0 0 auto; display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden;}
+.curtog button{border:none; background:#fff; color:var(--muted); font-weight:800; font-size:12px; padding:10px 11px;}
+.curtog button.on{background:var(--teal); color:#fff;}
+.convhint{font-size:11.5px; color:var(--muted); margin:7px 2px 9px; line-height:1.4;}
+.toggle{display:block; width:100%; border:none; border-radius:10px; padding:11px; font-weight:800; font-size:13px; color:#fff; background:var(--wait);}
+.toggle.on{background:var(--ok);}
+.bdone{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);}
+.bdonefig{font-size:13px; margin-bottom:9px;}
+.bdonefig b{font-size:16px; color:var(--ok); font-variant-numeric:tabular-nums;}
+.bhint{font-size:11.5px; color:var(--muted); margin:2px 2px 12px; line-height:1.45;}
+
+/* Reservations */
+.ritem{display:flex; gap:11px; padding:12px 0; border-bottom:1px solid var(--line);}
+.ritem:last-child{border-bottom:none;}
+.rchk{flex:0 0 22px; height:22px; border-radius:7px; border:2px solid var(--line); margin-top:2px; display:flex; align-items:center; justify-content:center; font-size:13px; color:#fff; font-weight:900;}
+.rchk.on{background:var(--ok); border-color:var(--ok);}
+.rbody{flex:1; min-width:0;}
+.rtitle{font-weight:800; font-size:13.5px;}
+.rmeta{font-size:11.5px; color:var(--muted); margin-top:2px;}
+.rnote{font-size:11.5px; color:#59635e; margin-top:4px; white-space:pre-line;}
+.rdead{font-size:11px; font-weight:800; color:var(--orange);}
+
+/* Vehicle cards */
+.vcard{border:1px solid var(--line); border-radius:14px; padding:0; margin-bottom:11px; overflow:hidden; background:#fff;}
+.vhead{background:#f0f5f2; padding:10px 13px; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+.vseg{font-weight:800; font-size:13.5px; color:var(--green);}
+.vday{font-size:11px; color:var(--muted); font-weight:700;}
+.vbody{padding:11px 13px;}
+.vline{display:flex; gap:8px; padding:4px 0; font-size:12.5px;}
+.vline .vk{flex:0 0 62px; color:var(--muted); font-weight:700;}
+.vline .vv{flex:1;}
+.callbtn{display:inline-block; margin-top:3px; background:#eef4f1; color:var(--teal); font-weight:800; font-size:12px; padding:6px 11px; border-radius:9px;}
+
+/* Info */
+.acc{border:1px solid var(--line); border-radius:12px; margin-bottom:9px; background:#fff; overflow:hidden;}
+.acc > summary{list-style:none; padding:12px 14px; font-weight:800; font-size:13.5px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;}
+.acc > summary::-webkit-details-marker{display:none;}
+.acc > summary::after{content:"▾"; color:var(--muted); font-size:12px; transition:transform .2s;}
+.acc[open] > summary::after{transform:rotate(180deg);}
+.acc .abody{padding:0 14px 13px;}
+.ei{padding:9px 0; border-bottom:1px dashed var(--line);}
+.ei:last-child{border-bottom:none;}
+.ei .ek{font-weight:800; font-size:12.5px; color:var(--green);}
+.ei .ev{font-size:12.5px; color:#4a544f; margin-top:2px; white-space:pre-line;}
+.emerg{background:#fdeee9; border:1px solid #f2c9bb;}
+.emerg a{font-weight:800;}
+
+.prep{display:flex; gap:10px; padding:9px 0; border-bottom:1px dashed var(--line); align-items:flex-start;}
+.prep:last-child{border-bottom:none;}
+.prep .pchk{flex:0 0 20px; height:20px; border-radius:6px; border:2px solid var(--line); margin-top:1px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:12px;}
+.prep .pchk.on{background:var(--ok); border-color:var(--ok);}
+.prep .pname{font-size:13px; font-weight:600;}
+.prep .pmeta{font-size:11px; color:var(--muted);}
+.prep.done .pname{text-decoration:line-through; color:var(--muted);}
+
+.rst{display:flex; align-items:center; gap:9px; padding:11px 0; border-bottom:1px solid var(--line);}
+.rst:last-child{border-bottom:none;}
+.rst .rsb{flex:0 0 66px; font-weight:800; font-size:11.5px; color:var(--orange);}
+.rst .rsn{flex:1;} .rst .rsn b{font-size:13.5px;} .rst .rsn .d{font-size:11.5px; color:var(--muted);}
+
+/* Bottom nav */
+nav{
+  position:fixed; bottom:0; left:0; right:0; z-index:50;
+  background:#fff; border-top:1px solid var(--line);
+  display:flex; padding-bottom:var(--safe-b);
+  box-shadow:0 -2px 12px rgba(0,0,0,.06);
+}
+nav button{
+  flex:1; border:none; background:none; padding:8px 2px 7px;
+  font-size:10.5px; font-weight:700; color:var(--muted);
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+nav button .ic{font-size:19px; line-height:1;}
+nav button.active{color:var(--green);}
+.resetbar{text-align:center; margin-top:18px;}
+.resetbar button{background:none; border:1px solid var(--line); border-radius:9px; padding:8px 14px; color:var(--muted); font-size:11.5px; font-weight:700;}
+</style>
+</head>
+<body>
+<header>
+  <span class="hbadge" id="hbadge">D-11</span>
+  <div class="htitle">🌴 발리 가족여행</div>
+  <div class="hsub">2026.8.2(일)~8.9(일) · 6박8일 · 7인 · v5.7</div>
+</header>
+
+<main id="app"></main>
+
+<nav id="nav">
+  <button data-t="home" class="active"><span class="ic">🏠</span>홈</button>
+  <button data-t="plan"><span class="ic">🗓️</span>일정</button>
+  <button data-t="map"><span class="ic">🗺️</span>지도</button>
+  <button data-t="budget"><span class="ic">💰</span>예산</button>
+  <button data-t="resv"><span class="ic">✅</span>예약</button>
+  <button data-t="car"><span class="ic">🚐</span>차량</button>
+  <button data-t="info"><span class="ic">ℹ️</span>정보</button>
+</nav>
+
+<script>
+/* ================= DATA ================= */
+const RATE = 0.084; // KRW per IDR (예산환율)
+
+const OVERVIEW = {
+  members: [
+    ["곽상헌","40"],["권여정","39"],["곽도율","47개월"],["권영준","36"],
+    ["심소민","30·임신12주+"],["권태소","68"],["최경옥","66"]
+  ],
+  kv: [
+    ["기간","2026.8.2(일)~8.9(일) · 6박8일(기내1박 포함)"],
+    ["항공①","8/2 인천 18:00→발리 23:50 · 선발대 5인 · 예약완료"],
+    ["항공②","8/5 인천 16:10→발리 22:10 · 부모님 2인 · 예약완료"],
+    ["항공③","8/8 발리 23:45→8/9 인천 07:55 · 전원 귀국 · 예약완료 (총 12,776,900원)"],
+    ["숙소 전반","8/2~8/5 짐바란 Vivara 풀빌라(방2, 5인) · 01:30 심야 체크인"],
+    ["숙소 후반","8/5~8/8 우붓 Nyuh Bali Villas(방3, 7인) · 무료 프로그램 다수"],
+    ["도율 수면","밤잠 21:00~07:00 → 저녁 일정 20:30 마무리 (도착일 8/2·8/5 예외)"],
+    ["핵심 배려","임산부 도보 최소화·얼음 없는 음료 / 부모님 평탄 동선·에어컨 휴식 / 8/7 영준·소민 숙소 휴식"]
+  ]
+};
+
+const DAYS = ["8/2","8/3","8/4","8/5","8/6","8/7","8/8","8/9"];
+const DOW  = {"8/2":"일","8/3":"월","8/4":"화","8/5":"수","8/6":"목","8/7":"금","8/8":"토","8/9":"일"};
+
+// group -> css class
+function grpClass(g){
+  if(/부모님/.test(g)) return "p";
+  if(/다이빙|사파리/.test(g)) return "d";
+  if(/휴식|선택/.test(g)) return "s";
+  return "";
+}
+
+const PLAN = [
+  ["8/2","15:00-18:00","5인","인천공항 수속·출국","선발대 5인 탑승수속·면세점·저녁. e-VOA·관광세 QR 출력물 지참","인천공항"],
+  ["8/2","18:00-23:50","5인","비행 (인천→발리)","소민: 2h마다 기내 스트레칭·수분 / 도율: 21시 이후 수면 유도","기내"],
+  ["8/2","23:50-01:30","5인","입국 및 숙소 이동","e-VOA·All Indonesia QR로 빠른 입국 → Vivara 픽업차량. IDR 250,000 예약완료","공항→짐바란"],
+  ["8/3","01:30","5인","Vivara 체크인·취침","심야 체크인 사전통보 완료. 방 2개 배정 후 즉시 취침","짐바란 Vivara"],
+  ["8/3","07:00-15:00","다이빙팀","누사페니다 펀다이빙","상헌·영준 3다이브. 수면 5h 미만/감기/귀막힘/피로 시 가이드와 취소·축소 판단","누사페니다"],
+  ["8/3","09:00-16:00","휴식팀","풀빌라 힐링","여정·소민·도율: 늦잠·수영·출장마사지(소민 프리네이탈)·Grab Food 점심","숙소"],
+  ["8/3","17:00-19:30","공통","짐바란 씨푸드 선셋 디너 — 메네가 카페","5인 해변 1열 예약(대안 리아). 다이빙팀 피로 시 18:30 조기귀가, 도율 21시 취침","메네가 카페"],
+  ["8/4","10:00-13:00","공통","사마스타 나들이 + 점심 와하하 폭립","라이프스타일 빌리지 산책 → 와하하 폭립 사마스타점(아이 편함)","사마스타"],
+  ["8/4","13:30-15:30","공통","풀빌라 휴식·수영","성인 교대 휴식, 도율 수영, 임산부 소민 휴식","숙소"],
+  ["8/4","15:30-19:00","공통","울루와투 선셋 — 싱글 핀","화 22시까지. 입구 가까운 상부 좌석, 절벽 계단 금지. 18:15 선셋 후 저녁·복귀","싱글 핀 (울루와투)"],
+  ["8/4","19:30","공통","숙소 복귀","20시 귀가 → 도율 21시 취침 리듬 유지","짐바란 Vivara"],
+  ["8/5","09:00-10:30","5인","조식·짐 정리·Vivara 체크아웃","10:30 정시 출발. 첫 목적지 Nyuh Bali, 캐리어 전량 숙소 보관 예정 사전공유","짐바란 Vivara"],
+  ["8/5","10:30-12:30","5인","Nyuh Bali로 이동·짐 보관","성수기 교통 120분 확보. 도착 즉시 프런트에 캐리어 전량 보관·보관표 확인","짐바란→Nyuh"],
+  ["8/5","12:30-13:00","5인","택시 호출·Pison Ubud 이동","객실 체크인은 미루고 짐 없이 외출. 6인승 택시/GrabCar XL 1대 호출","Nyuh→Pison"],
+  ["8/5","13:00","부모님","자택 출발 권장","인천공항 90분 이동 가정. 교통 상황 따라 더 일찍 출발","자택→인천공항"],
+  ["8/5","13:00-14:10","5인","점심 — Pison Ubud","논 전망 아시안·웨스턴 퓨전. 도율·임산부 편한 밥·치킨·파스타, 14:10 택시 호출","Pison Ubud"],
+  ["8/5","14:10-15:20","부모님","인천공항 수속·출국 준비","출발 3h 전 도착. 2터미널→체크인·수하물→보안·출국심사→15:20 탑승구","인천공항 2터미널"],
+  ["8/5","14:10-15:00","5인","택시 이동·Coco 장보기","생수·과일·우유·도율 간식·부모님 심야 간식만 35분 안에 구매","Pison→Coco"],
+  ["8/5","15:00-16:00","5인","Nyuh Bali 복귀·체크인","Coco 15:00 전후 출발. 맡긴 짐 찾아 객실 체크인·웰컴티·방 배정","Coco→Nyuh"],
+  ["8/5","16:00-17:20","5인","수영·애프터눈 티·휴식","도율 수영은 성인 1명 전담. 부모님 도착 안내문·기사 연락처 객실 준비","Nyuh Bali"],
+  ["8/5","16:10-22:10","부모님","비행 (인천→발리)","발리 22:10=한국 23:10. 여권·입국 QR·픽업 기사 연락처 기내 수하물 보관","기내"],
+  ["8/5","17:30-19:00","5인","저녁 — Lumbini Restaurant","이동일엔 숙소 내 조기 저녁. 알레르기·임산부 식이 요청, 20:30 도율 취침 준비","Nyuh Bali"],
+  ["8/5","22:10-00:40","부모님","공항 도착·기사 단독 픽업","입국·수하물 40~70분. Nyuh 픽업 IDR 850,000, 네임보드·기사 WhatsApp 확인","공항→Nyuh"],
+  ["8/6","00:10-00:40","부모님","Nyuh Bali 심야 체크인","도착 즉시 객실 안내·간식 후 취침. 공식 합류는 아침 조식","Nyuh Bali"],
+  ["8/6","08:00-09:15","공통","7인 첫 조식·느린 출발","부모님 수면 확보 위해 아침 프로그램 생략. 컨디션 나쁘면 뜨갈랄랑 생략·시내부터","Nyuh Bali"],
+  ["8/6","09:30-11:15","공통","[일일투어] 뜨갈랄랑 + TIS Cafe","마이리얼트립 전용차량 예약완료. 09:30 픽업, 카톡 BaliPrivate_37 / +62 81246658618","뜨갈랄랑"],
+  ["8/6","11:45-12:50","공통/선택","우붓 왕궁·사라스와티·Cafe Lotus 커피","왕궁 20분 후 연못 전망 Cafe Lotus 커피 25~30분. 시장은 희망자만 15분","우붓 중심"],
+  ["8/6","13:00-14:10","공통","점심 — RM Kayana 나시짬뿌르","반찬 골라담는 나시짬뿌르. 맵지 않은 닭·달걀·채소 별도 요청","RM Kayana"],
+  ["8/6","14:20-15:20","공통","몽키포레스트 전원 관람","전원 7인 입장, 짧은 코스 60분. 먹이·안경·모자 노출 금지, 중간 휴식 확보","몽키포레스트"],
+  ["8/6","16:10-17:00","공통","숙소 복귀·전면 휴식","애프터눈 티는 가능할 때만. 샤워·휴식 우선","Nyuh Bali"],
+  ["8/6","17:30-18:45","공통","저녁 — 베벡 테바사리","숙소 인근 논뷰 가제보. 7인 좌석 예약, 매운 소스 별도 요청","베벡 테바사리"],
+  ["8/6","18:45~","선택","저녁 후 숙소 복귀","체력 좋은 성인만 18:50 출발. 우붓왕궁 공연은 당일 재확인","Nyuh Bali"],
+  ["8/7","07:00-09:00","팀별","조식·준비 후 사파리팀 이동","사파리팀 08:15 전용 밴 출발. 모자·생수·간식·겉옷 준비. 영준·소민은 느린 아침","Nyuh→사파리"],
+  ["8/7","09:00-12:00","사파리 5인","사파리 여행·동물 교육 3종","Safari Journey(30분)→10:15 동물교육→11:00 호랑이교육→11:35 코끼리교육","Bali Safari"],
+  ["8/7","12:00-13:15","사파리 5인","Tsavo Lion 단품 점심","패키지 제외 단품 주문. 사자창 가까운 좌석 사전 문의","Tsavo Lion"],
+  ["8/7","13:15-16:20","사파리 5인","먹이주기·동물 만남·발리 아궁","13:30 빈투롱/악어 먹이주기, 15:00 발리 아궁 공연. 16:00 기사 연락, 16:20 복귀","Bali Safari"],
+  ["8/7","09:00-20:30","공통/분리","휴식팀 Nyuh · 저녁 7인 BBQ","영준·소민 객실·수영장 휴식·Lumbini 점심. 사파리팀 복귀 후 18:00 빌라 BBQ, 20:30 종료","Nyuh Bali"],
+  ["8/8","07:30-08:45","공통","플로팅 조식·일반 조식","플로팅 트레이 2인용 → 사진팀 2인만, 나머지는 빌라/Lumbini 조식","Nyuh Bali"],
+  ["8/8","08:45-10:30","공통","짐 정리·체크아웃","10:30 로비 집결, 11:00 출발. 출국용 옷·서류는 별도 가방","Nyuh Bali"],
+  ["8/8","11:00-13:00","공통","전용 밴으로 꾸따 이동","토요일 성수기 2시간 확보. 같은 밴이 짐 보관·공항까지 동행","우붓→꾸따"],
+  ["8/8","13:00-15:15","공통","비치워크 점심·쇼핑","점심 60분·쇼핑 60분, 15:00 집결. 지연 시 쇼핑부터 축소","비치워크"],
+  ["8/8","15:45-18:15","공통","Taman Air Spa 3인×2회","60분 코스 2개 조. 비시술조가 도율 돌봄, 샤워·환복 포함 18:15 종료","Taman Air Spa"],
+  ["8/8","18:35-19:35","공통","마지막 저녁 — Kunyit Restaurant","The Anvaya 발리·인니 전통식. 매운맛·돼지고기 분리, 임산부·아이 메뉴. 19:35 종료","Tuban (The Anvaya)"],
+  ["8/8","19:35-20:00","공통","공항 이동","Tuban→공항 10~20분. 여유 포함 20:00 국제선 터미널 도착 목표","Tuban→공항"],
+  ["8/8","20:00-23:45","공통","공항 수속·출국","출발 3.5h 전 도착. 체크인·보안 후 도율 기내수면 준비","응우라라이 공항"],
+  ["8/9","07:55","공통","인천 도착","수고하셨습니다! 완전체 귀국 🎉","인천공항"]
+];
+
+// 동선지도: 구간(leg) = [시간, 경로제목, 설명, 출발지검색어, 도착지검색어, 태그]
+const MAPDAYS = [
+ { label:"8/2", title:"8/2 일 · 입국 이동", note:"심야 도착 후 숙소 픽업 예약 완료 IDR 250,000",
+   legs:[
+    ["23:50","응우라라이 공항 → Vivara Jimbaran","입국·수하물 후 숙소 픽업 차량 탑승","Ngurah Rai International Airport","Vivara Bali Private Pool Villas Jimbaran","숙소 픽업 완료"]
+   ]},
+ { label:"8/3", title:"8/3 월 · 다이빙 & 짐바란", note:"다이빙팀과 휴식팀 분리, 저녁은 메네가 카페",
+   legs:[
+    ["07:00","Vivara → Hippo Diving Bali","자가차량 기준 25~35분 · 상헌·영준 다이빙팀 집결지 이동","Vivara Bali Private Pool Villas Jimbaran","Hippo Diving Bali Sanur","히포다이빙"],
+    ["17:00","Vivara → Menega Cafe","자가차량 기준 10분 · 선발대 5인 씨푸드 선셋 디너","Vivara Bali Private Pool Villas Jimbaran","Menega Cafe Jimbaran Bali","식당 5인"]
+   ]},
+ { label:"8/4", title:"8/4 화 · 짐바란 여유", note:"사마스타, 와하하, 울루와투 선셋",
+   legs:[
+    ["10:00","Vivara → Samasta","자가차량 기준 10분 · 나들이와 점심 전 이동","Vivara Bali Private Pool Villas Jimbaran","Samasta Lifestyle Village","자가 10분"],
+    ["12:00","Samasta → Wahaha Pork Ribs","점심 · 단지 내 도보 이동 가능","Samasta Lifestyle Village","Wahaha Pork Ribs Samasta Jimbaran","도보 가능"],
+    ["15:30","Vivara → Single Fin","자가차량 기준 30~40분 · 울루와투 선셋 저녁","Vivara Bali Private Pool Villas Jimbaran","Single Fin Bali Uluwatu","상부 좌석"]
+   ]},
+ { label:"8/5", title:"8/5 수 · 우붓 이동 & 부모님 합류", note:"Nyuh에 짐을 먼저 맡긴 뒤 택시로 Pison·Coco 왕복, 밤에는 부모님 공항 픽업",
+   legs:[
+    ["10:30","Vivara → Nyuh Bali","자가차량 기준 100~120분 · 체크아웃 후 숙소로 바로 이동해 캐리어 전량 보관","Vivara Bali Private Pool Villas Jimbaran","Nyuh Bali Villas Lodtunduh Ubud","이동 밴"],
+    ["12:30","Nyuh Bali → Pison Ubud","자가차량 기준 20~30분(택시) · 짐 없이 6인승 택시/GrabCar XL 이동","Nyuh Bali Villas Lodtunduh Ubud","Pison Ubud Jalan Hanoman Ubud","6인승 택시"],
+    ["14:10","Pison Ubud → Coco Supermarket","근거리 차량 5~10분(택시) · 필요한 식품만 짧게 장보기","Pison Ubud Jalan Hanoman Ubud","Coco Supermarket Ubud","장보기"],
+    ["15:00","Coco → Nyuh Bali","자가차량 기준 20~30분(택시) · 숙소 복귀 후 짐 수령·체크인","Coco Supermarket Ubud","Nyuh Bali Villas Lodtunduh Ubud","복귀·체크인"],
+    ["22:10","공항 → Nyuh Bali","자가차량 기준 60~90분 · 장인어른·장모님 숙소 픽업 IDR 850,000","Ngurah Rai International Airport","Nyuh Bali Villas Lodtunduh Ubud","부모님 픽업"]
+   ]},
+ { label:"8/6", title:"8/6 목 · 우붓 일일투어", note:"마이리얼트립 차량 예약 완료 214,927원 · BaliPrivate_37",
+   legs:[
+    ["09:30","Nyuh Bali → TIS Cafe","자가차량 기준 40분 · 뜨갈랄랑 계단식 논","Nyuh Bali Villas Lodtunduh Ubud","Tis Cafe Tegalalang","예약 완료"],
+    ["11:45","TIS Cafe → Cafe Lotus","왕궁·사라스와티 근처 커피","Tis Cafe Tegalalang","Cafe Lotus Ubud Saraswati Temple","커피 7인"],
+    ["13:00","Cafe Lotus → RM Kayana","자가차량 기준 10~20분 · 나시짬뿌르 점심","Cafe Lotus Ubud Saraswati Temple","RM Kayana Ubud Pengosekan","점심"],
+    ["14:20","RM Kayana → Monkey Forest","자가차량 기준 10분 · 몽키포레스트 전원 관람","RM Kayana Ubud Pengosekan","Sacred Monkey Forest Sanctuary Ubud","전원 관람"],
+    ["16:10","Monkey Forest → Nyuh Bali","자가차량 기준 15분 · 숙소 복귀·전면 휴식","Sacred Monkey Forest Sanctuary Ubud","Nyuh Bali Villas Lodtunduh Ubud","휴식"],
+    ["17:30","Nyuh Bali → Bebek Tebasari","근거리 차량 5분 · 논뷰 가제보 저녁","Nyuh Bali Villas Lodtunduh Ubud","Bebek Tebasari Resto Ubud","식당 7인"]
+   ]},
+ { label:"8/7", title:"8/7 금 · 사파리팀 & 휴식팀", note:"사파리팀 5인, 영준·소민은 Nyuh 휴식. 점심은 Tsavo Lion 단품",
+   legs:[
+    ["08:15","Nyuh Bali → Bali Safari","자가차량 기준 40~50분 · 사파리 왕복 차량 예약 완료 IDR 450,000","Nyuh Bali Villas Lodtunduh Ubud","Bali Safari and Marine Park","사파리팀 5인"],
+    ["09:00","Bali Safari 내부 동선","Safari Journey → 동물교육 → 호랑이교육 → 코끼리교육","Bali Safari and Marine Park","Tsavo Lion Restaurant Bali Safari","점심 전"],
+    ["12:00","Tsavo Lion Restaurant","사자창 좌석 문의 후 단품 점심","Bali Safari and Marine Park","Tsavo Lion Restaurant Bali Safari","점심 5인"],
+    ["15:00","Bali Safari → Nyuh Bali","자가차량 기준 40~50분 · 발리 아궁 후 16:00 기사 연락, 16:20 전후 복귀","Bali Safari and Marine Park","Nyuh Bali Villas Lodtunduh Ubud","복귀"]
+   ]},
+ { label:"8/8", title:"8/8 토 · 남부 & 출국", note:"체크아웃 후 꾸따, 스파, 마지막 저녁, 공항 이동",
+   legs:[
+    ["11:00","Nyuh Bali → Beachwalk","자가차량 기준 90~120분 · 전용 밴으로 꾸따 이동","Nyuh Bali Villas Lodtunduh Ubud","Beachwalk Shopping Center Kuta","10시간 밴"],
+    ["15:45","Beachwalk → Taman Air Spa","자가차량 기준 20~30분 · 3인씩 2회 스파","Beachwalk Shopping Center Kuta","Taman Air Spa Bali Sunset Road","스파"],
+    ["18:35","Taman Air Spa → Kunyit Restaurant","자가차량 기준 20~30분 · 마지막 저녁","Taman Air Spa Bali Sunset Road","Kunyit Restaurant The Anvaya Bali","식당 7인"],
+    ["19:35","Kunyit → Ngurah Rai Airport","자가차량 기준 10~20분 · 공항 이동 후 23:45 출국","Kunyit Restaurant The Anvaya Bali","Ngurah Rai International Airport","출국"]
+   ]},
+ { label:"8/9", title:"8/9 일 · 귀국", note:"인천 도착 후 예약 콜밴으로 자택 이동 예정",
+   legs:[
+    ["07:55","인천공항 → 자택","수하물 수령 후 콜밴 기사 연락 · 12인승","Incheon International Airport Terminal 1","Seoul, South Korea","콜밴 예약 필요"]
+   ]}
+];
+
+// 예산: [cat, name, unitIDR|null, unitKRW|null, qty, estKRW, done, note]
+const BUDGET = [
+ ["비자·행정","e-VOA (선발대)",null,43014,5,215070,true,"곽상헌·권여정·곽도율·아버님·어머님"],
+ ["비자·행정","발리 관광세 (선발대)",null,13256,5,66280,true,"전원 부과, QR 지참"],
+ ["비자·행정","e-VOA (추가)",null,43014,2,86028,true,"유아 포함 전원, 공식가"],
+ ["비자·행정","발리 관광세 (추가)",null,13256,2,26512,true,"전원 부과, QR 지참"],
+ ["액티비티","누사페니다 펀다이빙 3다이브",3680000,null,2,618240,true,"히포다이빙(상헌·영준). 215달러 현지 결제(짐바란 픽드랍 포함)"],
+ ["교통","8/5 짐바란→Nyuh 이동 밴+시내택시",250000,null,1,21000,true,"Vivara 10:30 출발→Nyuh 짐 보관. Pison·Coco 왕복 택시 포함 확인"],
+ ["교통","8/5 공항→우붓 부모님 픽업",850000,null,1,71400,true,"Nyuh 숙소 픽업. 22:10 착륙, 네임보드"],
+ ["교통","8/6 차량 대절 8시간(기사포함)",null,214927,1,214927,true,"마이리얼트립 BaliPrivate_37 / +62 81246658618"],
+ ["교통","8/7 사파리 왕복 전용 밴",450000,null,1,37800,true,"사파리팀 5인 왕복. 08:15 픽업"],
+ ["교통","8/8 우붓→꾸따→공항 10시간 밴",null,149150,1,149150,true,"마이리얼트립 10:30~20:30"],
+ ["액티비티","사파리 Jungle Hopper 성인",750000,null,4,252000,false,"성인 4인 합 IDR 3,000,000, 방문 8/7"],
+ ["액티비티","사파리 Jungle Hopper 아동",620000,null,1,52080,false,"아동 1인, 방문 8/7"],
+ ["액티비티","몽키포레스트 성인",130000,null,6,65520,false,"8/6 성인 6인"],
+ ["액티비티","몽키포레스트 아동",100000,null,1,8400,false,"8/6 도율 1인"],
+ ["교통","8/5 짐바란→우붓 이동(예비)",850000,null,1,71400,false,"5인+캐리어. 밴 기사에게 짐 보관·정차 순서 공유"],
+ ["교통","Grab 일상 이동",250000,null,3,63000,false,"8/3·8/4·8/6 저녁 및 유동 일정"],
+ ["식비","점심 (5일분)",975000,null,5,409500,false,"8/5 Pison·8/6 RM Kayana 포함. 8/7 Tsavo 별도"],
+ ["식비","저녁 - 메네가 카페 씨푸드 (8/3)",1000000,null,1,84000,false,"선발대 5인. 랍스터 추가 시 상승"],
+ ["식비","저녁 - 빌라 프라이빗 BBQ (8/7)",450000,null,6,226800,false,"Nyuh 셰프 BBQ. 메뉴 PDF 확인 후 확정"],
+ ["식비","저녁 - 일반 3일 (8/4·5·8)",1300000,null,3,327600,false,"싱글핀·숙소·Kunyit, 6.5인분×20만"],
+ ["식비","저녁 - 베벡 테바사리 (8/6)",900000,null,1,75600,false,"크리스피 덕 6.5인분"],
+ ["식비","플로팅 조식 업그레이드 (8/8)",400000,null,1,33600,false,"2인용 트레이 1개"],
+ ["식비","간식·카페·배달·8/7 점심",250000,null,6,126000,false,"일 25만×6일. 8/7 영준·소민 점심 포함"],
+ ["스파","8/3 프리네이탈 마사지 (소민)",470000,null,1,39480,false,"임산부 전용 코스"],
+ ["스파","우붓 숙소 스파 (8/6 or 8/7)",450000,null,2,75600,false,"숙소 내 스파 21시까지, 성인 2인"],
+ ["스파","8/8 Taman Air Spa 60분",350000,null,6,176400,false,"3인×2회, 비시술조 도율 돌봄"],
+ ["통신","eSIM (5일 3GB급)",null,15000,2,30000,false,"소민·여정"],
+ ["보험","여행자보험 7인",null,100000,1,100000,false,"종합형 추정. 임신 관련 면책 확인"],
+ ["식비","8/7 Tsavo Lion 단품 점심 (5인)",1100000,null,1,92400,false,"주메뉴 IDR 80,000~495,000+10% 세금. 현장 조정"]
+];
+const FLIGHT_KRW = 12776900;
+const LODGE_KRW  = 4577697; // 짐바란 1,867,697 + 우붓 2,710,000
+const TARGET_KRW = 20000000;
+
+// 예약: [cat, title, where, deadline, owner, status, note]  status: done/wait/prog
+const RESV = [
+ ["액티비티","히포다이빙 누사페니다 2인 (8/3)","히포다이빙 공식/카톡","7/18","상헌","done","성수기 마감 빠름. 짐바란 픽업, 3다이브"],
+ ["액티비티","발리사파리 Jungle Hopper 5인 발권 (8/7)","공식 WhatsApp/웹","7/22·7/31","상헌","wait","성인4+아동1 IDR 3,620,000. 날짜·차량 확정 후 7/29~8/1 온라인 발권 ⭐출력"],
+ ["숙소","Nyuh Bali 서비스·심야 합류 일괄 확인","WhatsApp +62 85-333-779-779","7/20","상헌","wait","8/7 BBQ·8/8 플로팅 2인·15시 클래스 확인"],
+ ["숙소","Vivara 심야 체크인(8/3 01:30) 통보","숙소 이메일/WhatsApp","7/20","상헌","done","카시트·유아 침구 문의"],
+ ["행정","e-VOA 7인 발급","evisa.imigrasi.go.id","7/22","상헌","done","공식 포털만. 여권 6개월+·귀국편 확인, 1인 50만루피아 ⭐출력"],
+ ["서류","소민 영문 임신확인서·소견서","산부인과","7/24","소민","prog","탑승시점 주수 기재. 항공사 임산부 규정 확인"],
+ ["행정","발리 관광세 7인 결제","lovebali.baliprov.go.id","7/25","상헌","done","1인 15만루피아, QR 저장. 영준·소민만 확인 ⭐출력"],
+ ["식당","메네가 카페 해변 1열 (8/3 17:00, 5인)","WhatsApp/현지","7/25","상헌","wait","부모님 합류 전 5인. 선셋 1열 조기 마감, 대안 리아"],
+ ["식당","Single Fin 상부 좌석 (8/4 16:00, 5인)","공식 예약","7/25","상헌","wait","임산부·유아 동행, 입구 가까운 상부. 절벽 계단 없음"],
+ ["식당","베벡 테바사리 가제보 7인 (8/6 17:30)","WhatsApp","7/25","상헌","done","논뷰 가제보석 지정"],
+ ["스파","Taman Air Spa 3인×2회 (8/8)","WhatsApp +62 811 389 5558","7/25","상헌","wait","60분 코스 2개 시간대·도율 대기공간. 부부 겹치지 않게 배치"],
+ ["교통","8/2 공항→짐바란 숙소 픽업 (5인)","Vivara 숙소 픽업","완료","상헌","done","IDR 250,000. 23:50 착륙, 기사 연락처 재확인"],
+ ["스파","8/3 출장마사지 (성인1+프리네이탈1)","출장 스파 WhatsApp","7/28","여정","prog","프리네이탈 가능 업체 확인 필수"],
+ ["교통","8/5 Vivara→Nyuh 짐보관 밴+택시","밴 기사+Grab/Gojek XL","7/29","상헌","wait","6인승 택시 1대 수용 여부 확인 ⭐출력"],
+ ["교통","8/5 공항→우붓 부모님 픽업 (네임보드)","Nyuh Bali 숙소","7/22 확정","상헌","done","IDR 850,000. 2인 22:10 착륙, 네임보드·결제방식 확정"],
+ ["교통","8/6 차량 대절 8시간 (12인승)","마이리얼트립 BaliPrivate_37","완료","상헌","done","214,927원. +62 81246658618, 09:30~17:30 ⭐출력"],
+ ["교통","8/7 사파리 왕복 밴 (5인)","Nyuh Bali 숙소","7/22 확정","상헌","done","IDR 450,000. 08:15 픽업→16:20 복귀. 취소조건 확인"],
+ ["교통","8/8 우붓→꾸따→공항 10시간 밴","마이리얼트립 BaliPrivate_37","7/29","상헌","done","10:30~20:30, 캐리어 차량보관 ⭐출력"],
+ ["보험","여행자보험 7인 가입","다이렉트 보험","7/30","상헌","wait","임신 관련 면책·다이빙 커버 특약 확인"],
+ ["행정","All Indonesia 입국신고 7인","allindonesia.imigrasi.go.id","7/30~8/1","상헌","wait","e-CD 대체 필수 통합신고. 도착 3일 전부터 무료 작성"],
+ ["통신","eSIM 2개 구매·설치","Klook","7/31","소민","done","소민·여정만 eSIM"],
+ ["앱","Grab·Gojek·WhatsApp 설치+카드 등록","상헌·영준 폰","7/31","공동","wait","2대 동시 호출 대비 두 명 모두 세팅"],
+ ["식당","Pison Ubud 5인 (8/5 13:00)","공식/WhatsApp","7/31","상헌","wait","논 전망·실내 접근 쉬운 좌석. 세금10%+서비스6.5%"],
+ ["식당","RM Kayana Ubud 7인 (8/6 13:00)","Google Maps/현지","7/31","상헌","wait","나시짬뿌르. 7인 착석·맵지 않은 반찬 확인"],
+ ["식당","Kunyit Restaurant 7인 (8/8 18:35)","공식/전화","8/1","상헌","wait","마지막 저녁. 19:35 종료, 20:00 공항 도착 목표"],
+ ["교통","8/5 부모님 자택→인천공항","가족차량/전철","8/1","상헌","done","전철 이용하기로 확정"],
+ ["교통","8/9 인천공항→자택 콜밴 (12인승)","콜밴 업체/공항 픽업","8/1","상헌","wait","07:55 착륙, 09:15~09:30 픽업. 7인+캐리어, 항공편·터미널 공유"]
+];
+
+// 차량: [seg, day, type, where, contact, price, status]  status: done/wait
+const CARS = [
+ ["공항 → 짐바란 (선발대 픽업)","8/2 23:50","숙소 픽업 차량","Vivara Bali 숙소 통해 예약","","IDR 250,000","done"],
+ ["공항 → 우붓 (부모님 픽업)","8/5 22:10","네임보드 기사 픽업","Nyuh Bali 숙소 통해 예약","+62 85-333-779-779","IDR 850,000","done"],
+ ["Vivara → Nyuh 이동 + 시내 택시","8/5 10:30","이동 밴 + 6인승 택시/GrabCar XL","밴 기사 + Grab/Gojek 앱","","IDR 250,000 (+택시)","wait"],
+ ["우붓 일일투어 (뜨갈랄랑·시내)","8/6 09:30","전용차량 8시간 (12인승·기사포함)","마이리얼트립 · BaliPrivate_37","+62 81246658618","214,927원","done"],
+ ["사파리 왕복","8/7 08:15","전용 밴 (5인)","Nyuh Bali 숙소 통해 예약","+62 85-333-779-779","IDR 450,000","done"],
+ ["우붓 → 꾸따 → 공항","8/8 10:30","전용 밴 10시간 (짐 보관)","마이리얼트립 · BaliPrivate_37","+62 81246658618","149,150원","done"],
+ ["인천공항 → 자택 (귀국)","8/9 07:55","콜밴 12인승","콜밴 업체 예약 예정","","미정","wait"],
+ ["부모님 자택 → 인천공항","8/5 13:00","전철 이용","가족 확정","","-","done"],
+ ["일상 근거리 이동","상시","Grab / Gojek 앱 호출","상헌·영준 폰 (카드 등록)","","IDR 250,000×3 예상","wait"]
+];
+
+const INFO = {
+ emerg:[
+  ["우붓 응급","Kenak Medika Hospital 24시간 응급실","tel:03614791911","0361-4791911"],
+  ["남부 응급","BIMC Hospital Kuta","tel:+62361761263","+62-361-761-263"],
+  ["영사콜센터","외교부 24시간 (카톡 상담 가능)","tel:+82232100404","+82-2-3210-0404"],
+  ["긴급번호","경찰 110 / 구급차 118·119 / 종합 112","",""],
+  ["Nyuh Bali","숙소 WhatsApp","tel:+6285333779779","+62 85-333-779-779"]
+ ],
+ local:[
+  ["환율","2026.7.15 중간환율 약 1 IDR=0.082원. 예산표는 수수료 여유 둔 0.084원 적용"],
+  ["시차","발리는 한국보다 1시간 느림 (한국 12:00 = 발리 11:00)"],
+  ["팁 문화","필수 아님. 픽업 기사 2~5만루피아, 스파 5만루피아면 충분"],
+  ["콘센트","인니 콘센트는 한국과 동일(C/F형, 220V) — 어댑터 불필요"],
+  ["입국 통합신고","All Indonesia: 2025.10부터 e-CD 대체. 도착 3일 전부터 무료 작성"],
+  ["식수","수돗물 음용 금지. 생수만. 양치도 생수 권장(특히 임산부·유아)"],
+  ["임산부 유의","오전·늦은 오후 위주 활동, 매 2시간 휴식. 생과일주스는 얼음 없이"],
+  ["유아 유의","원숭이 지역 음식·비닐·안경 노출 금지, 손 꼭 잡기. 밤잠 21:00~07:00. 차량마다 카시트 재확인"],
+  ["다이빙 유의","장거리 비행 직후 3다이브: 금주·수분·컨디션 점검. 감기·귀막힘·피로 시 축소/취소"]
+ ],
+ nyuh:[
+  ["연락처","WhatsApp +62-85-333-779-779 / info@ubudnyuhbali.com / Jl. Raya Silungan, Lodtunduh"],
+  ["무료 프로그램","논밭 산책 매일 07:00 / 전통 클래스 15:00~16:00 / 애프터눈 티 / 우붓 셔틀 / 홈짐"],
+  ["요일별","사운드힐링 목(8/6)·토(8/8) / 호흡법 금(8/7) — 전날 프런트 시간 확인"],
+  ["운영 참고","조식 Lumbini 07:00~11:00 / 공항↔숙소 90~120분 / BBQ·플로팅·스파 사전확인"]
+ ],
+ dining:[
+  ["8/3 저녁","메네가 카페","해산물 BBQ 세트 · 2~3.5만원","5인 1열석","다이빙팀 피로 시 18:30 조기종료"],
+  ["8/4 점심","와하하 폭립 사마스타점","BBQ 폭립·사테 · 1.5~2.5만원","불필요","사마스타 내 푸드코트 다수"],
+  ["8/4 선셋","Single Fin","피자·버거·스무디 · ~2만원","상부 좌석","화 08~22시. 절벽 계단 이용 X"],
+  ["8/5 점심","Pison Ubud","덕 라이스·치킨·파스타 · 1~2만원","5인 문의","07~23시. 세금10%+서비스6.5%"],
+  ["8/5 저녁","Lumbini (Nyuh)","발리니즈·웨스턴 · 1.5~2.5만원","투숙객","MSG 미사용, 식이 맞춤 가능"],
+  ["8/6 브런치","TIS Cafe","브런치·스무디·논뷰 · 1~2만원","앞자리 권장","무료입장, 논길 대신 전망대"],
+  ["8/6 점심","RM Kayana","나시짬뿌르 · 0.2~0.5만원","7인 문의","맵지 않은 반찬 요청"],
+  ["8/6 저녁","베벡 테바사리","크리스피 덕·베벡 베투투 · 1~2만원","7인 가제보","플로팅석 +62-361-8493382"],
+  ["8/7 점심","Tsavo Lion","인터내셔널 · 0.7~4.6만원","5인(성인4+아동1)","입장권과 별도, 단품 주문"],
+  ["8/7 저녁","빌라 프라이빗 BBQ","셰프 출장 BBQ · 4~5만원","필수(숙소)","이동 없음 — 도율 21시 취침 최적"],
+  ["8/8 점심","비치워크 3층 푸드코트","로컬+세계음식 · 0.5~1.5만원","불필요","도보권 포피스 레스토랑"],
+  ["8/8 저녁","Kunyit (The Anvaya)","발리·인니 전통식 · 확인필요","7인 예약","마지막 현지식, 06~23시"]
+ ]
+};
+
+const PREP = [
+ ["서류","여권 (유효기간 6개월+) 7인","각자"],
+ ["서류","e-VOA·관광세·All Indonesia QR 출력물","상헌"],
+ ["서류","항공권·숙소·픽업 바우처","상헌"],
+ ["서류","임신확인서·의사소견서(영문)","소민"],
+ ["의약품","임산부용 타이레놀","소민"],
+ ["의약품","유아 해열제(챔프/부루펜)·체온계","도율"],
+ ["의약품","지사제·소화제·경구수분보충염·밴드·연고","공용"],
+ ["의약품","모기 기피제(유아용 별도)·물린데 바르는 약","공용"],
+ ["의약품","멀미약(우붓 산길)","부모님"],
+ ["유아용품","도율 수영용품·구명조끼·래시가드","도율"],
+ ["유아용품","간식·놀잇감·태블릿(기내)","도율"],
+ ["유아용품","초경량 접이식 유모차/힙시트","부부"],
+ ["유아용품","차량용 카시트 사전 요청","상헌"],
+ ["전자기기","충전기·보조배터리(기내 반입)","각자"],
+ ["전자기기","방수팩·셀카봉","공용"],
+ ["의류","수영복·모자·선글라스·선크림","각자"],
+ ["의류","얇은 긴팔(냉방·모기)","각자"],
+ ["의류","사원용 긴 하의/사롱","공용"],
+ ["현금/카드","환전(루피아)+트래블카드","상헌·영준"],
+ ["앱","Grab·Gojek·WhatsApp·구글맵 오프라인","상헌·영준"]
+];
+
+/* ================= STATE ================= */
+const LS = {
+  budget: "bali_v57_budget",
+  resv:   "bali_v57_resv",
+  prep:   "bali_v57_prep"
+};
+function load(k){ try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return {};} }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+let stBudget = load(LS.budget); // idx -> {done:bool, actual:number|null}
+let stResv   = load(LS.resv);   // idx -> bool (override)
+let stPrep   = load(LS.prep);   // idx -> bool
+
+/* ================= HELPERS ================= */
+const won = n => Math.round(n).toLocaleString("ko-KR");
+function gmapSearch(q){ return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q); }
+function gmapDir(stops){
+  const qs = stops.map(s=>encodeURIComponent(s));
+  const origin = qs[0], dest = qs[qs.length-1];
+  const way = qs.slice(1,-1).join("%7C");
+  let u = "https://www.google.com/maps/dir/?api=1&origin="+origin+"&destination="+dest+"&travelmode=driving";
+  if(way) u += "&waypoints="+way;
+  return u;
+}
+
+/* ================= RENDER ================= */
+const app = document.getElementById("app");
+let curDay = "8/2";
+let bFilter = "todo"; // all | todo | done
+
+function render(tab){
+  if(tab==="home") return renderHome();
+  if(tab==="plan") return renderPlan();
+  if(tab==="map")  return renderMap();
+  if(tab==="budget") return renderBudget();
+  if(tab==="resv") return renderResv();
+  if(tab==="car")  return renderCar();
+  if(tab==="info") return renderInfo();
+}
+
+function renderHome(){
+  let h = `<h2 class="sec">👨‍👩‍👧‍👦 구성원 7인</h2>
+   <div class="card"><div class="members">`;
+  OVERVIEW.members.forEach(m=> h+=`<div class="mem">${m[0]} <span>${m[1]}</span></div>`);
+  h += `</div></div><h2 class="sec">📋 여행 개요</h2><div class="card">`;
+  OVERVIEW.kv.forEach(r=> h+=`<div class="kv"><div class="k">${r[0]}</div><div class="v">${r[1]}</div></div>`);
+  h += `</div>`;
+
+  // budget mini
+  const s = calcBudget();
+  h += `<h2 class="sec">💰 예산 현황</h2>
+   <div class="bsummary" onclick="go('budget')" style="cursor:pointer">
+     <div class="brow"><span>총 목표 예산</span><span class="amt">${won(TARGET_KRW)}원</span></div>
+     <div class="brow"><span>항공+숙소 결제</span><span class="amt">${won(FLIGHT_KRW+LODGE_KRW)}원</span></div>
+     <div class="brow"><span>현지경비 (실지출+견적)</span><span class="amt">${won(s.localTotal)}원</span></div>
+     <div class="brow big"><span>${s.diff>=0?"예산 잔액":"예산 초과"}</span>
+        <span class="amt ${s.diff>=0?'pos':'neg'}">${s.diff>=0?'':'-'}${won(Math.abs(s.diff))}원</span></div>
+     <div class="bbar"><i style="width:${Math.min(100,s.usedPct)}%"></i></div>
+     <div class="brow" style="font-size:11px;opacity:.8"><span>목표 대비 ${s.usedPct}% 사용</span><span>탭하여 결산 →</span></div>
+   </div>`;
+
+  // reservation mini
+  const rc = resvCounts();
+  h += `<h2 class="sec">✅ 예약 진행</h2>
+   <div class="card" onclick="go('resv')" style="cursor:pointer">
+     <div class="row between"><div class="b8">${rc.done} / ${rc.total} 완료</div>
+       <div>${rc.wait>0?`<span class="tag t-wait">대기 ${rc.wait}</span> `:''}${rc.prog>0?`<span class="tag t-prog">진행 ${rc.prog}</span>`:''}</div></div>
+     <div class="bbar" style="background:#eee9dd;margin-top:9px"><i style="width:${Math.round(rc.done/rc.total*100)}%;background:var(--teal)"></i></div>
+   </div>`;
+
+  h += `<div class="resetbar"><button onclick="resetAll()">저장한 결산·체크 초기화</button></div>
+   <div class="bhint" style="text-align:center">오프라인 파일 · 입력값은 이 기기 브라우저에만 저장됩니다.</div>`;
+  app.innerHTML = h;
+}
+
+function renderPlan(){
+  let h = `<div class="daytabs">`;
+  DAYS.forEach(d=> h+=`<div class="daytab ${d===curDay?'active':''}" onclick="setDay('${d}')">${d}<span class="d2">${DOW[d]}</span></div>`);
+  h += `</div>`;
+  const items = PLAN.filter(p=>p[0]===curDay);
+  h += `<h2 class="sec">🗓️ ${curDay} (${DOW[curDay]}) · ${items.length}개 일정</h2><div class="card"><div class="tl">`;
+  items.forEach(p=>{
+    const [d,time,grp,ttl,det,place]=p;
+    h += `<div class="ti">
+      <div class="time">${time}</div>
+      <div class="ttl">${ttl}</div>
+      <div class="det">${det}</div>
+      <div class="meta"><span class="grp ${grpClass(grp)}">${grp}</span>
+      ${place?`<a class="pin" href="${gmapSearch(place)}" target="_blank" rel="noopener">📍 ${place}</a>`:''}</div>
+    </div>`;
+  });
+  h += `</div></div>`;
+  app.innerHTML = h;
+}
+
+const enc = encodeURIComponent;
+const legDir = leg => `https://www.google.com/maps/dir/?api=1&origin=${enc(leg[3])}&destination=${enc(leg[4])}&travelmode=driving`;
+const legEmbed = leg => `https://www.google.com/maps?output=embed&saddr=${enc(leg[3])}&daddr=${enc(leg[4])}`;
+const legSearch = leg => `https://www.google.com/maps/search/?api=1&query=${enc(leg[4])}`;
+let mapLeg = 0;
+
+function renderMap(){
+  let dayIdx = MAPDAYS.findIndex(d=>d.label===curDay);
+  if(dayIdx<0){ dayIdx=0; curDay=MAPDAYS[0].label; }
+  const day = MAPDAYS[dayIdx];
+  if(mapLeg>=day.legs.length) mapLeg=0;
+
+  let h = `<div class="daytabs">`;
+  MAPDAYS.forEach(d=> h+=`<div class="daytab ${d.label===curDay?'active':''}" onclick="setDay('${d.label}')">${d.label}<span class="d2">${DOW[d.label]}</span></div>`);
+  h += `</div>`;
+  h += `<h2 class="sec">🗺️ ${day.title}</h2>`;
+  h += `<div class="daynote">${day.note}</div>`;
+
+  h += `<div class="card" style="padding:0">`;
+  day.legs.forEach((leg,idx)=>{
+    h += `<div class="leg ${idx===mapLeg?'active':''}" onclick="setLeg(${idx})">
+      <div class="legtime">${leg[0]}</div>
+      <div>
+        <div class="legttl">${leg[1]}</div>
+        <div class="legmeta">${leg[2]}</div>
+        <span class="legtag">${leg[5]}</span>
+      </div>
+    </div>`;
+  });
+  h += `</div>`;
+
+  const leg = day.legs[mapLeg];
+  h += `<div class="mapbox">
+    <div class="mapcur">
+      <div class="mapcurttl">${leg[1]}</div>
+      <div class="mapcurdet">${leg[3]} → ${leg[4]}</div>
+    </div>
+    <div class="mapacts">
+      <a class="action" href="${legDir(leg)}" target="_blank" rel="noopener">🧭 길찾기 열기</a>
+      <a class="action sec" href="${legSearch(leg)}" target="_blank" rel="noopener">📍 장소 검색</a>
+    </div>
+    <iframe class="mapframe" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${legEmbed(leg)}"></iframe>
+    <div class="maphint">지도는 온라인일 때 구글맵을 그대로 불러옵니다(휴대폰 데이터·GPS 사용). 현지 교통상황에 따라 이동시간이 달라질 수 있으니 출발 직전 한 번 더 확인하세요.</div>
+  </div>`;
+  app.innerHTML = h;
+}
+
+function calcBudget(){
+  let done=0, todoEst=0;
+  BUDGET.forEach((b,i)=>{
+    const st = stBudget[i]||{};
+    const isDone = st.done!==undefined ? st.done : b[6];
+    if(isDone){
+      const actual = (st.actual!==undefined && st.actual!==null && st.actual!=="") ? Number(st.actual) : b[5];
+      done += actual;
+    } else {
+      todoEst += b[5];
+    }
+  });
+  const localTotal = done + todoEst;
+  const grand = FLIGHT_KRW + LODGE_KRW + localTotal;
+  const diff = TARGET_KRW - grand;
+  const usedPct = Math.round(grand/TARGET_KRW*100);
+  return {done, todoEst, localTotal, grand, diff, usedPct};
+}
+
+function renderBudget(){
+  const s = calcBudget();
+  let h = `<div class="bsummary">
+     <div class="brow"><span>총 목표 예산</span><span class="amt">${won(TARGET_KRW)}원</span></div>
+     <div class="brow"><span>✈️ 항공권 (결제완료)</span><span class="amt">${won(FLIGHT_KRW)}원</span></div>
+     <div class="brow"><span>🏨 숙소 (결제완료)</span><span class="amt">${won(LODGE_KRW)}원</span></div>
+     <div class="brow"><span>💵 현지 실지출·결제완료</span><span class="amt">${won(s.done)}원</span></div>
+     <div class="brow"><span>🧾 현지 미완료 견적</span><span class="amt">${won(s.todoEst)}원</span></div>
+     <div class="brow big"><span>${s.diff>=0?'남는 예산':'초과'}</span>
+        <span class="amt ${s.diff>=0?'pos':'neg'}">${s.diff>=0?'':'-'}${won(Math.abs(s.diff))}원</span></div>
+     <div class="bbar"><i style="width:${Math.min(100,s.usedPct)}%"></i></div>
+     <div class="brow" style="font-size:11px;opacity:.85"><span>총 지출 ${won(s.grand)}원</span><span>목표의 ${s.usedPct}%</span></div>
+   </div>`;
+  h += `<div class="bhint">미완료 항목에 쓴 금액을 IDR/KRW로 입력 → <b>[이 금액으로 완료 처리]</b>를 누르면 KRW로 환산·확정됩니다. 완료 항목은 금액이 잠기며, 다시 누르면 미완료로 돌아가 수정할 수 있어요.</div>`;
+  h += `<div class="bfilter">
+     <button class="${bFilter==='todo'?'active':''}" onclick="setBF('todo')">미완료</button>
+     <button class="${bFilter==='done'?'active':''}" onclick="setBF('done')">완료</button>
+     <button class="${bFilter==='all'?'active':''}" onclick="setBF('all')">전체</button>
+   </div>`;
+
+  BUDGET.forEach((b,i)=>{
+    const st = stBudget[i]||{};
+    const isDone = st.done!==undefined ? st.done : b[6];
+    if(bFilter==='todo' && isDone) return;
+    if(bFilter==='done' && !isDone) return;
+    const raw = (st.raw!==undefined && st.raw!==null) ? st.raw : "";
+    const cur = st.cur || 'KRW';
+    const actual = (st.actual!==undefined && st.actual!==null) ? Number(st.actual) : null;
+    const shown = isDone ? (actual!==null?actual:b[5]) : b[5];
+    const unit = b[2]!==null ? `IDR ${b[2].toLocaleString()}${b[4]>1?' ×'+b[4]:''}` : (b[4]>1?`${won(b[3])}원 ×${b[4]}`:'');
+    h += `<div class="bitem ${isDone?'done':''}">
+      <div class="bhead">
+        <div style="min-width:0">
+          <div class="bcat">${b[0]}${unit?' · '+unit:''}</div>
+          <div class="bname">${b[1]}</div>
+        </div>
+        <div class="bfig">
+          <div class="best">견적 ${won(b[5])}</div>
+          <div class="bact">${won(shown)}원</div>
+        </div>
+      </div>
+      ${b[7]?`<div class="bnote">${b[7]}</div>`:''}`;
+    if(isDone){
+      h += `<div class="bdone">
+        <div class="bdonefig">확정 금액 <b>${won(shown)}원</b>${(raw!==""&&cur==='IDR')?` <span class="xsmall muted">(입력 IDR ${Number(raw).toLocaleString()})</span>`:''}</div>
+        <button class="toggle on" onclick="toggleDone(${i})">완료 ✓ · 탭하여 미완료로</button>
+      </div>`;
+    } else {
+      h += `<div class="bctl">
+        <div class="curtog">
+          <button class="${cur==='KRW'?'on':''}" onclick="setCur(${i},'KRW')">KRW</button>
+          <button class="${cur==='IDR'?'on':''}" onclick="setCur(${i},'IDR')">IDR</button>
+        </div>
+        <input type="number" inputmode="numeric" placeholder="쓴 금액 (${cur})" value="${raw}" oninput="setRaw(${i}, this.value)">
+      </div>
+      <div class="convhint" id="conv-${i}">${convText(raw,cur)}</div>
+      <button class="toggle" onclick="toggleDone(${i})">이 금액으로 완료 처리</button>`;
+    }
+    h += `</div>`;
+  });
+  app.innerHTML = h;
+}
+function convText(raw,cur){
+  const n = Number(raw);
+  if(raw===""||isNaN(n)||n<=0) return "금액을 비워두고 완료하면 견적 금액으로 처리됩니다.";
+  if(cur==='IDR') return `≈ ${won(n*RATE)}원 으로 확정 (예산환율 0.084)`;
+  return `${won(n)}원 으로 확정`;
+}
+
+function renderResv(){
+  const rc = resvCounts();
+  let h = `<h2 class="sec">✅ 예약·행정 (${rc.done}/${rc.total})</h2>
+    <div class="card tight"><div class="row between small">
+      <span><span class="tag t-ok">완료 ${rc.done}</span> <span class="tag t-wait">대기 ${rc.wait}</span> <span class="tag t-prog">진행중 ${rc.prog}</span></span>
+    </div></div>`;
+  // group by category order of appearance
+  const cats = [...new Set(RESV.map(r=>r[0]))];
+  cats.forEach(cat=>{
+    h += `<h2 class="sec" style="font-size:14px;color:var(--navy)">${cat}</h2><div class="card">`;
+    RESV.forEach((r,i)=>{
+      if(r[0]!==cat) return;
+      const base = r[5]==='done';
+      const on = stResv[i]!==undefined ? stResv[i] : base;
+      const stTag = on ? '<span class="tag t-ok">완료</span>' : (r[5]==='prog'?'<span class="tag t-prog">진행중</span>':'<span class="tag t-wait">대기</span>');
+      h += `<div class="ritem">
+        <div class="rchk ${on?'on':''}" onclick="toggleResv(${i})">${on?'✓':''}</div>
+        <div class="rbody">
+          <div class="row between"><div class="rtitle">${r[1]}</div>${stTag}</div>
+          <div class="rmeta">🏢 ${r[2]} · 👤 ${r[4]} · <span class="rdead">⏰ ${r[3]}</span></div>
+          ${r[6]?`<div class="rnote">${r[6]}</div>`:''}
+        </div>
+      </div>`;
+    });
+    h += `</div>`;
+  });
+  h += `<div class="bhint">체크박스를 누르면 완료 상태를 이 기기에 저장합니다. ⭐출력 = 출력물 지참 권장 항목.</div>`;
+  app.innerHTML = h;
+}
+
+function renderCar(){
+  let h = `<h2 class="sec">🚐 차량·이동 예약 현황</h2>`;
+  CARS.forEach(c=>{
+    const [seg,day,type,where,contact,price,status]=c;
+    h += `<div class="vcard">
+      <div class="vhead">
+        <div><div class="vseg">${seg}</div><div class="vday">${day}</div></div>
+        <span class="tag ${status==='done'?'t-ok':'t-wait'}">${status==='done'?'예약완료':'예약대기'}</span>
+      </div>
+      <div class="vbody">
+        <div class="vline"><div class="vk">차량</div><div class="vv">${type}</div></div>
+        <div class="vline"><div class="vk">예약처</div><div class="vv b">${where}</div></div>
+        <div class="vline"><div class="vk">요금</div><div class="vv">${price}</div></div>
+        ${contact?`<div class="vline"><div class="vk">연락처</div><div class="vv"><a class="callbtn" href="tel:${contact.replace(/[^+0-9]/g,'')}">📞 ${contact}</a></div></div>`:''}
+      </div>
+    </div>`;
+  });
+  h += `<div class="bhint">숙소(Nyuh)·마이리얼트립·Grab 앱 등 예약처별로 정리되어 있습니다. 연락처를 누르면 전화가 연결됩니다.</div>`;
+  app.innerHTML = h;
+}
+
+function renderInfo(){
+  let h = `<h2 class="sec">🚨 비상 연락처</h2><div class="card emerg">`;
+  INFO.emerg.forEach(e=>{
+    h += `<div class="ei"><div class="ek">${e[0]}</div><div class="ev">${e[1]}${e[3]?' — '+(e[2]?`<a href="${e[2]}">${e[3]}</a>`:e[3]):''}</div></div>`;
+  });
+  h += `</div>`;
+
+  h += `<h2 class="sec">🧳 준비물 체크리스트</h2>`;
+  const pcats=[...new Set(PREP.map(p=>p[0]))];
+  pcats.forEach(pc=>{
+    h += `<details class="acc"><summary>${pc}</summary><div class="abody">`;
+    PREP.forEach((p,i)=>{
+      if(p[0]!==pc) return;
+      const on = !!stPrep[i];
+      h += `<div class="prep ${on?'done':''}">
+        <div class="pchk ${on?'on':''}" onclick="togglePrep(${i})">${on?'✓':''}</div>
+        <div><div class="pname">${p[1]}</div><div class="pmeta">${p[2]}</div></div>
+      </div>`;
+    });
+    h += `</div></details>`;
+  });
+
+  h += `<h2 class="sec">🍽️ 식당 확정안</h2><div class="card">`;
+  INFO.dining.forEach(d=>{
+    h += `<div class="rst"><div class="rsb">${d[0]}</div>
+      <div class="rsn"><b>${d[1]}</b> <span class="tag t-grey">${d[3]}</span><div class="d">${d[2]} · ${d[4]}</div></div></div>`;
+  });
+  h += `</div>`;
+
+  h += `<h2 class="sec">🏝️ 현지 정보</h2><details class="acc" open><summary>기본 정보 & 유의사항</summary><div class="abody">`;
+  INFO.local.forEach(l=> h+=`<div class="ei"><div class="ek">${l[0]}</div><div class="ev">${l[1]}</div></div>`);
+  h += `</div></details>`;
+  h += `<details class="acc"><summary>Nyuh Bali 숙소 정보</summary><div class="abody">`;
+  INFO.nyuh.forEach(l=> h+=`<div class="ei"><div class="ek">${l[0]}</div><div class="ev">${l[1]}</div></div>`);
+  h += `</div></details>`;
+
+  h += `<h2 class="sec">👵 부모님 8/5 출국 안내</h2><div class="card">
+    <div class="ei"><div class="ek">항공편</div><div class="ev">KE432 · 인천 2터미널(터미널 I) · 16:10 출발 → 발리 22:10 도착</div></div>
+    <div class="ei"><div class="ek">권장 동선</div><div class="ev">13:00 자택 출발(전철) → 13:10~14:10 체크인 → 15:20 탑승구 → 22:10 착륙 → 네임보드 기사 픽업 → 00:10~00:40 Nyuh 심야 체크인</div></div>
+    <div class="ei"><div class="ek">꼭 확인</div><div class="ev">여권·입국 QR·기사 연락처는 기내 가방에. 도착하면 가족 카톡방에 연락. 모르는 호객 차량 이용 금지</div></div>
+    <div class="ei"><div class="ek">8/9 귀국</div><div class="ev">07:55 인천 도착 → 09:15~09:30 예약 콜밴(12인승) 승차 → 자택</div></div>
+   </div>`;
+  app.innerHTML = h;
+}
+
+/* counts */
+function resvCounts(){
+  let done=0,wait=0,prog=0;
+  RESV.forEach((r,i)=>{
+    const on = stResv[i]!==undefined ? stResv[i] : (r[5]==='done');
+    if(on) done++;
+    else if(r[5]==='prog') prog++;
+    else wait++;
+  });
+  return {done,wait,prog,total:RESV.length};
+}
+
+/* ================= ACTIONS ================= */
+let curTab="home";
+function go(t){
+  curTab=t;
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.t===t));
+  window.scrollTo(0,0);
+  render(t);
+}
+function setDay(d){ curDay=d; mapLeg=0; render(curTab); window.scrollTo(0,0); }
+function setLeg(i){ mapLeg=i; renderMap(); }
+function setBF(f){ bFilter=f; renderBudget(); }
+function toggleDone(i){
+  const st = stBudget[i]||{};
+  const isDone = st.done!==undefined ? st.done : BUDGET[i][6];
+  if(!isDone){
+    // 완료 처리: 입력 금액을 KRW로 환산해 확정
+    const n = Number(st.raw);
+    if(st.raw!==undefined && st.raw!=="" && !isNaN(n) && n>0){
+      st.actual = (st.cur==='IDR') ? Math.round(n*RATE) : Math.round(n);
+    } else {
+      st.actual = BUDGET[i][5]; // 미입력 시 견적으로 확정
+    }
+    st.done = true;
+  } else {
+    // 미완료로 되돌리기 (입력값·통화는 유지해 수정 가능)
+    st.done = false;
+  }
+  stBudget[i]=st; save(LS.budget,stBudget);
+  renderBudget();
+}
+function setRaw(i,v){
+  const st = stBudget[i]||{};
+  st.raw = v; if(!st.cur) st.cur='KRW';
+  stBudget[i]=st; save(LS.budget,stBudget);
+  const el = document.getElementById('conv-'+i);
+  if(el) el.textContent = convText(v, st.cur); // 요약·포커스 유지
+}
+function setCur(i,c){
+  const st = stBudget[i]||{};
+  st.cur = c;
+  stBudget[i]=st; save(LS.budget,stBudget);
+  renderBudget();
+}
+function toggleResv(i){
+  const base = RESV[i][5]==='done';
+  const cur = stResv[i]!==undefined ? stResv[i] : base;
+  stResv[i]=!cur; save(LS.resv,stResv);
+  render(curTab);
+}
+function togglePrep(i){ stPrep[i]=!stPrep[i]; save(LS.prep,stPrep); renderInfo(); }
+function resetAll(){
+  if(confirm("입력한 결산 금액·예약체크·준비물 체크를 모두 지울까요?")){
+    localStorage.removeItem(LS.budget); localStorage.removeItem(LS.resv); localStorage.removeItem(LS.prep);
+    stBudget={}; stResv={}; stPrep={};
+    render(curTab);
+  }
+}
+
+/* D-day badge */
+(function(){
+  try{
+    const dep=new Date(2026,7,2), now=new Date();
+    const d=Math.ceil((dep-now)/86400000);
+    document.getElementById("hbadge").textContent = d>0?("D-"+d):(d===0?"D-DAY":"여행중");
+  }catch(e){}
+})();
+
+document.querySelectorAll("#nav button").forEach(b=> b.addEventListener("click",()=>go(b.dataset.t)));
+render("home");
+</script>
+</body>
+</html>
