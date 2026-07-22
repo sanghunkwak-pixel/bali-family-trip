@@ -84,6 +84,15 @@ h2.sec:first-child{margin-top:4px;}
 .daytab.active{background:var(--green); color:#fff; border-color:var(--green);}
 .daytab.active .d2{color:#cfe6dd;}
 
+.planhint{font-size:12px; color:var(--muted); margin:2px 2px 10px; line-height:1.45;}
+.tracklabel{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:800; color:var(--green); margin:16px 2px 8px; padding-left:10px; border-left:4px solid var(--teal);}
+.tracklabel span{font-size:11px; font-weight:800; color:#fff; background:var(--teal); border-radius:20px; padding:2px 8px;}
+.tracklabel.tl-parent{color:var(--prog); border-left-color:var(--prog);}
+.tracklabel.tl-parent span{background:var(--prog);}
+.tracklabel.tl-dive,.tracklabel.tl-safari{color:var(--orange); border-left-color:var(--orange);}
+.tracklabel.tl-dive span,.tracklabel.tl-safari span{background:var(--orange);}
+.tracklabel.tl-rest{color:#8256a8; border-left-color:#8256a8;}
+.tracklabel.tl-rest span{background:#8256a8;}
 .tl{position:relative; padding-left:16px;}
 .tl::before{content:""; position:absolute; left:4px; top:6px; bottom:6px; width:2px; background:var(--line);}
 .ti{position:relative; margin-bottom:11px;}
@@ -656,23 +665,49 @@ function renderHome(){
   app.innerHTML = h;
 }
 
+function trackInfo(grp){
+  if(/부모님/.test(grp)) return {key:'parent', order:9, label:'✈️ 부모님 (이동·합류)'};
+  if(/다이빙/.test(grp)) return {key:'dive',   order:3, label:'🤿 다이빙팀'};
+  if(/사파리/.test(grp)) return {key:'safari', order:3, label:'🦁 사파리팀'};
+  if(/휴식/.test(grp))   return {key:'rest',   order:4, label:'🏡 휴식팀'};
+  return {key:'main', order:1, label:'main'};
+}
+function planItemHTML(p){
+  const [d,time,grp,ttl,det,place]=p;
+  return `<div class="ti">
+    <div class="time">${time}</div>
+    <div class="ttl">${ttl}</div>
+    <div class="det">${det}</div>
+    <div class="meta"><span class="grp ${grpClass(grp)}">${grp}</span>
+    ${place?`<a class="pin" href="${gmapSearch(place)}" target="_blank" rel="noopener">📍 ${place}</a>`:''}</div>
+  </div>`;
+}
 function renderPlan(){
   let h = `<div class="daytabs">`;
   DAYS.forEach(d=> h+=`<div class="daytab ${d===curDay?'active':''}" onclick="setDay('${d}')">${d}<span class="d2">${DOW[d]}</span></div>`);
   h += `</div>`;
   const items = PLAN.filter(p=>p[0]===curDay);
-  h += `<h2 class="sec">🗓️ ${curDay} (${DOW[curDay]}) · ${items.length}개 일정</h2><div class="card"><div class="tl">`;
-  items.forEach(p=>{
-    const [d,time,grp,ttl,det,place]=p;
-    h += `<div class="ti">
-      <div class="time">${time}</div>
-      <div class="ttl">${ttl}</div>
-      <div class="det">${det}</div>
-      <div class="meta"><span class="grp ${grpClass(grp)}">${grp}</span>
-      ${place?`<a class="pin" href="${gmapSearch(place)}" target="_blank" rel="noopener">📍 ${place}</a>`:''}</div>
-    </div>`;
+  h += `<h2 class="sec">🗓️ ${curDay} (${DOW[curDay]}) · ${items.length}개 일정</h2>`;
+
+  // 팀(트랙)별로 묶기 — 부모님 이동 일정을 현지 일정과 분리
+  const map={};
+  items.forEach(p=>{ const t=trackInfo(p[2]); if(!map[t.key]) map[t.key]={info:t,items:[]}; map[t.key].items.push(p); });
+  const keys=Object.keys(map).sort((a,b)=>map[a].info.order-map[b].info.order);
+  const parentPresent=!!map['parent'];
+  const multi=keys.length>1;
+
+  if(multi) h += `<div class="planhint">👥 이 날은 팀별로 나눠 표시합니다. 아래로 스크롤하면 팀별 일정이 이어집니다.</div>`;
+
+  keys.forEach(k=>{
+    if(multi){
+      let label=map[k].info.label;
+      if(k==='main') label = parentPresent ? '🌴 발리 현지 일정' : '👨‍👩‍👧‍👦 전체·공통 일정';
+      h += `<div class="tracklabel tl-${k}">${label} <span>${map[k].items.length}</span></div>`;
+    }
+    h += `<div class="card"><div class="tl">`;
+    map[k].items.forEach(p=> h+=planItemHTML(p));
+    h += `</div></div>`;
   });
-  h += `</div></div>`;
   app.innerHTML = h;
 }
 
